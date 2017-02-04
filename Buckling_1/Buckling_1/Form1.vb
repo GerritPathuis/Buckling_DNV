@@ -1,7 +1,66 @@
 ﻿Public Class Form1
 
-
     Private Sub Button6_Click(sender As Object, e As EventArgs) Handles Button6.Click, NumericUpDown45.ValueChanged, NumericUpDown44.ValueChanged, NumericUpDown43.ValueChanged, NumericUpDown42.ValueChanged, NumericUpDown41.ValueChanged, NumericUpDown40.ValueChanged, NumericUpDown39.ValueChanged, NumericUpDown36.ValueChanged, NumericUpDown47.ValueChanged, NumericUpDown46.ValueChanged
+        DNV_chapter5_0()
+    End Sub
+
+    Private Sub Button2_Click(sender As Object, e As EventArgs) Handles Button2.Click, TabPage2.Enter, NumericUpDown8.ValueChanged, NumericUpDown13.ValueChanged, NumericUpDown12.ValueChanged, NumericUpDown11.ValueChanged
+        DNV_chapter6_2()    'Unstiffened plate longitudinal uniform loading
+    End Sub
+
+    Private Sub Button3_Click(sender As Object, e As EventArgs) Handles Button3.Click, TabPage3.Enter, NumericUpDown19.ValueChanged, NumericUpDown18.ValueChanged, NumericUpDown17.ValueChanged, NumericUpDown15.ValueChanged
+        DNV_chapter6_3()    'Unstiffened plate transverse uniform loading
+    End Sub
+
+    Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click, NumericUpDown9.ValueChanged, NumericUpDown6.ValueChanged, NumericUpDown5.ValueChanged, NumericUpDown4.ValueChanged, NumericUpDown2.ValueChanged, NumericUpDown1.ValueChanged, TabPage1.Enter
+        'Determine the weight and the stress due to weight
+        Dim box_l, box_w, box_h, box_thick As Double
+        Dim w_roof, w_longpanel, w_shortpanel As Double
+        Dim wght_fact, wght_explo, wght_total As Double
+        Dim vacuum_p, vacuum_wght As Double
+        Dim total_wght_on_walls As Double
+        Dim comp_stress, total_wall_area As Double
+
+        'Dimensions
+        box_l = NumericUpDown4.Value        'Length
+        box_w = NumericUpDown5.Value        'Width
+        box_h = NumericUpDown1.Value        'Height
+        box_thick = NumericUpDown36.Value   'Wall thickness
+        wght_fact = NumericUpDown9.Value    'Stiff+girder+expl_doors+insu
+        wght_explo = NumericUpDown2.Value   'Explosion doors on roof
+
+        'Weight
+        w_roof = box_l * box_w * box_thick / 1000 ^ 3 * 8000 * wght_fact
+        w_roof += wght_explo
+        w_longpanel = box_l * box_h * box_thick / 1000 ^ 3 * 8000 * wght_fact
+        w_shortpanel = box_w * box_w * box_thick / 1000 ^ 3 * 8000 * wght_fact
+        wght_total = w_roof + 2 * w_longpanel + 2 * w_shortpanel
+
+        'Vacuum
+        vacuum_p = NumericUpDown45.Value                            '[Pa]
+        vacuum_wght = vacuum_p * box_l * box_w / 1000 ^ 2 / 9.81    '[kg]
+        total_wght_on_walls = vacuum_wght + wght_total      '[kg]
+
+        'Traverse compression stress
+        total_wall_area = (box_l + box_w) * 2 * box_thick           '[mm2]
+        comp_stress = total_wght_on_walls * 9.81 / total_wall_area  '[N/mm2]
+
+        TextBox5.Text = Math.Round(box_thick, 0).ToString
+        TextBox6.Text = Math.Round(w_roof, 0).ToString
+        TextBox7.Text = Math.Round(w_longpanel, 0).ToString
+        TextBox8.Text = Math.Round(w_shortpanel, 0).ToString
+        TextBox9.Text = Math.Round(wght_total, 0).ToString
+        TextBox10.Text = Math.Round(comp_stress, 1).ToString
+        TextBox11.Text = Math.Round(vacuum_p, 0).ToString
+        TextBox12.Text = Math.Round(vacuum_wght, 0).ToString
+        TextBox14.Text = Math.Round(total_wght_on_walls, 0).ToString
+
+        'Transfer result to next tab
+        If comp_stress < NumericUpDown43.Maximum And comp_stress > NumericUpDown43.Minimum Then
+            NumericUpDown43.Value = Math.Round(comp_stress, 0)
+        End If
+    End Sub
+    Private Sub DNV_chapter5_0()
         'Çhapter 5, DNV-RP-C201, Oktober 2010 
         Dim fy As Double
         Dim t As Double
@@ -60,71 +119,19 @@
         Label18.Text = IIf(s / t < 5.4 * epsilon, "Buckling check NOT neccessary", "Buckling check is neccessary")
     End Sub
 
-    Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click, NumericUpDown9.ValueChanged, NumericUpDown6.ValueChanged, NumericUpDown5.ValueChanged, NumericUpDown4.ValueChanged, NumericUpDown2.ValueChanged, NumericUpDown1.ValueChanged, TabPage1.Enter
-        'Determine the weight and the stress due to weight
-        Dim box_l, box_w, box_h, box_thick As Double
-        Dim w_roof, w_longpanel, w_shortpanel As Double
-        Dim wght_fact, wght_explo, wght_total As Double
-        Dim vacuum_p, vacuum_wght As Double
-        Dim total_wght_on_walls As Double
-        Dim comp_stress, total_wall_area As Double
-
-        'Dimensions
-        box_l = NumericUpDown4.Value        'Length
-        box_w = NumericUpDown5.Value        'Width
-        box_h = NumericUpDown1.Value        'Height
-        box_thick = NumericUpDown36.Value   'Wall thickness
-        wght_fact = NumericUpDown9.Value    'Stiff+girder+expl_doors+insu
-        wght_explo = NumericUpDown2.Value   'Explosion doors on roof
-
-        'Weight
-        w_roof = box_l * box_w * box_thick / 1000 ^ 3 * 8000 * wght_fact
-        w_roof += wght_explo
-        w_longpanel = box_l * box_h * box_thick / 1000 ^ 3 * 8000 * wght_fact
-        w_shortpanel = box_w * box_w * box_thick / 1000 ^ 3 * 8000 * wght_fact
-        wght_total = w_roof + 2 * w_longpanel + 2 * w_shortpanel
-
-        'Vacuum
-        vacuum_p = NumericUpDown45.Value                            '[Pa]
-        vacuum_wght = vacuum_p * box_l * box_w / 1000 ^ 2 / 9.81    '[kg]
-        total_wght_on_walls = vacuum_wght + wght_total      '[kg]
-
-        'Traverse compression stress
-        total_wall_area = (box_l + box_w) * 2 * box_thick           '[mm2]
-        comp_stress = total_wght_on_walls * 9.81 / total_wall_area  '[N/mm2]
-
-
-        TextBox5.Text = Math.Round(box_thick, 0).ToString
-        TextBox6.Text = Math.Round(w_roof, 0).ToString
-        TextBox7.Text = Math.Round(w_longpanel, 0).ToString
-        TextBox8.Text = Math.Round(w_shortpanel, 0).ToString
-        TextBox9.Text = Math.Round(wght_total, 0).ToString
-        TextBox10.Text = Math.Round(comp_stress, 1).ToString
-        TextBox11.Text = Math.Round(vacuum_p, 0).ToString
-        TextBox12.Text = Math.Round(vacuum_wght, 0).ToString
-        TextBox14.Text = Math.Round(total_wght_on_walls, 0).ToString
-
-        'Transfer result to next tab
-        If comp_stress < NumericUpDown43.Maximum And comp_stress > NumericUpDown43.Minimum Then
-            NumericUpDown43.Value = Math.Round(comp_stress, 0)
-        End If
-    End Sub
-
-    Private Sub Button2_Click(sender As Object, e As EventArgs) Handles Button2.Click, TabPage2.Enter
-        'Chapter 6.2
-        Dim fy, t, s, ym, psd As Double
+    Private Sub DNV_chapter6_2()
+        '============ Longitudinal uniform compression chapter 6.2 ===========
+        Dim fy, t, S, ym As Double
         Dim E_mod As Double
         Dim lambda_P, Cx, sigma_Xrd As Double
 
-        fy = NumericUpDown40.Value          'Yield stress
-        s = NumericUpDown39.Value           'Stiffeners distance
-        t = NumericUpDown36.Value           'Plate thickness
-        E_mod = NumericUpDown3.Value        'Elasticity [N/mm2]
-        ym = NumericUpDown41.Value          'Safety
-        Psd = NumericUpDown45.Value / 1000 ^ 2  '[N/mm2]
+        fy = NumericUpDown13.Value          'Yield stress
+        S = NumericUpDown12.Value           'Stiffeners distance
+        t = NumericUpDown11.Value           'Plate thickness
+        E_mod = NumericUpDown7.Value        'Elasticity [N/mm2]
+        ym = NumericUpDown10.Value          'Safety
 
-        '============ Longitudinal uniform compression===========
-        lambda_P = 0.525 * s / t * Math.Sqrt(fy / E_mod)    'formule 6.3
+        lambda_P = 0.525 * S / t * Math.Sqrt(fy / E_mod)    'formule 6.3
 
         If lambda_P < 0.673 Then            'formule 6.2
             Cx = 1
@@ -137,16 +144,30 @@
         TextBox3.Text = Math.Round(lambda_P, 2).ToString
         TextBox15.Text = Math.Round(Cx, 2).ToString
         TextBox16.Text = Math.Round(sigma_Xrd, 0).ToString
+    End Sub
 
-        '============ Transverserse uniform compression===========
+    Private Sub DNV_chapter6_3()
+        '============ Transverse uniform compression chapter 6.3 ===========
+        Dim fy, t, S, psd, ym As Double
+        Dim E_mod As Double
+        Dim length As Double
+
+        fy = NumericUpDown19.Value          'Yield stress
+        S = NumericUpDown18.Value           'Stiffeners distance
+        t = NumericUpDown17.Value           'Plate thickness
+        E_mod = NumericUpDown14.Value       'Elasticity [N/mm2]
+        ym = NumericUpDown16.Value          'Safety
+        length = NumericUpDown15.Value      'stiffeners length
+
+        '============ Transverserse uniform compression chapter 6.3===========
         Dim lambda_C, kappa, mu As Double
-        Dim Kp, h_alfa As Double
+        Dim Kp, h_alfa, sigma_YR, sigma_YRd As Double
 
         '============= h_alfa ============= Formule 6.11
-        h_alfa = 0.05 * s / t - 0.75
+        h_alfa = 0.05 * S / t - 0.75
 
         '========== kp  ============ Formule 6.10
-        If psd <= 2 * (t / s) ^ 2 * fy Then
+        If psd <= 2 * (t / S) ^ 2 * fy Then
             Kp = 1
         Else
             Kp = 1 - h_alfa * (psd / fy - 2 * (t / s) ^ 2)
@@ -154,7 +175,7 @@
         End If
 
         '======== lambda_C ========= Formule 6.8
-        lambda_C = 1.1 * s / t * Math.Sqrt(fy / E_mod)
+        lambda_C = 1.1 * S / t * Math.Sqrt(fy / E_mod)
 
         '=========== kappa======= Formule 6.7
         If lambda_C <= 0.2 Then kappa = 1
@@ -167,7 +188,28 @@
         '========== mu========== Formule 6.9
         mu = 0.21 * (lambda_C - 0.2)
 
+        '========== sigma_YR ========== Formule 6.6
+        sigma_YR = 1.3 * t / length * Math.Sqrt(E_mod / fy)
+        sigma_YR += kappa * (1 - 1.3 * t / length * Math.Sqrt(E_mod / fy))
+        sigma_YR *= fy * Kp
+
+        '========== sigma_YR ========== Formule 6.5
+        sigma_YRd = sigma_YR / ym
+
+        TextBox17.Text = Math.Round(h_alfa, 2).ToString     '6.11
+        TextBox18.Text = Math.Round(Kp, 2).ToString         '6.10
+        TextBox19.Text = Math.Round(mu, 0).ToString         '6.9
+        TextBox20.Text = Math.Round(lambda_C, 2).ToString   '6.8
+        TextBox21.Text = Math.Round(kappa, 2).ToString      '6.7
+        TextBox22.Text = Math.Round(sigma_YR, 0).ToString   '6.6
+        TextBox24.Text = Math.Round(sigma_YRd, 0).ToString  '6.5
     End Sub
 
-
+    Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+        TextBox23.Text =
+        "Based on " & vbCrLf &
+        "Recommended Practice DNV-RP-C201, October 2010" & vbCrLf &
+        "Buckling Strength of plated structures" & vbCrLf &
+        "https://rules.dnvgl.com/servicedocuments/dnv"
+    End Sub
 End Class
