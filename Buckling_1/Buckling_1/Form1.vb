@@ -1,14 +1,22 @@
-﻿Public Class Form1
+﻿Imports System.IO
+Imports System.Text
+Imports System.Math
 
-    Private Sub Button6_Click(sender As Object, e As EventArgs) Handles Button6.Click, NumericUpDown45.ValueChanged, NumericUpDown44.ValueChanged, NumericUpDown43.ValueChanged, NumericUpDown42.ValueChanged, NumericUpDown41.ValueChanged, NumericUpDown40.ValueChanged, NumericUpDown39.ValueChanged, NumericUpDown36.ValueChanged, NumericUpDown47.ValueChanged, NumericUpDown46.ValueChanged
+Public Class Form1
+    Public fy As Double         'Yield stress
+    Dim Ym As Double            'Safety factor
+    Dim E_mod As Double         'Elasticity [N/mm2]
+
+
+    Private Sub Button6_Click(sender As Object, e As EventArgs) Handles Button6.Click, NumericUpDown45.ValueChanged, NumericUpDown44.ValueChanged, NumericUpDown43.ValueChanged, NumericUpDown42.ValueChanged, NumericUpDown39.ValueChanged, NumericUpDown36.ValueChanged, NumericUpDown47.ValueChanged, NumericUpDown46.ValueChanged
         DNV_chapter5_0()
     End Sub
 
-    Private Sub Button2_Click(sender As Object, e As EventArgs) Handles Button2.Click, TabPage2.Enter, NumericUpDown8.ValueChanged, NumericUpDown13.ValueChanged, NumericUpDown12.ValueChanged, NumericUpDown11.ValueChanged
+    Private Sub Button2_Click(sender As Object, e As EventArgs) Handles Button2.Click, TabPage2.Enter, NumericUpDown8.ValueChanged, NumericUpDown12.ValueChanged, NumericUpDown11.ValueChanged
         DNV_chapter6_2()    'Unstiffened plate longitudinal uniform loading
     End Sub
 
-    Private Sub Button3_Click(sender As Object, e As EventArgs) Handles Button3.Click, TabPage3.Enter, NumericUpDown19.ValueChanged, NumericUpDown18.ValueChanged, NumericUpDown17.ValueChanged, NumericUpDown15.ValueChanged
+    Private Sub Button3_Click(sender As Object, e As EventArgs) Handles Button3.Click, TabPage3.Enter, NumericUpDown18.ValueChanged, NumericUpDown17.ValueChanged, NumericUpDown15.ValueChanged, NumericUpDown24.ValueChanged
         DNV_chapter6_3()    'Unstiffened plate transverse uniform loading
     End Sub
 
@@ -62,11 +70,10 @@
     End Sub
     Private Sub DNV_chapter5_0()
         'Çhapter 5, DNV-RP-C201, Oktober 2010 
-        Dim fy As Double
         Dim t As Double
         Dim s As Double
         Dim length As Double
-        Dim upsilon_m As Double
+
         Dim upsilon_X As Double
         Dim upsilon_Y As Double
 
@@ -79,11 +86,9 @@
         Dim Psd_check As Double
         Dim epsilon As Double
 
-        fy = NumericUpDown40.Value          'Yield stress
         s = NumericUpDown39.Value           'Stiffeners distance
         t = NumericUpDown36.Value           'Plate thickness
         length = NumericUpDown47.Value      'stiffeners length
-        upsilon_m = NumericUpDown41.Value   'Safety factor
 
         Psd = NumericUpDown45.Value / 1000 ^ 2  '[N/mm2]
         sigma_Xsd = NumericUpDown43.Value
@@ -104,7 +109,7 @@
 
 
         'Psd Check (formula 5.1)
-        Psd_check = 4 * fy / upsilon_m * ((t / s) ^ 2) * (upsilon_Y + ((s / length) ^ 2 * upsilon_X))
+        Psd_check = 4 * fy / Ym * ((t / s) ^ 2) * (upsilon_Y + ((s / length) ^ 2 * upsilon_X))
 
         TextBox1.Text = Math.Round(upsilon_X, 6).ToString
         TextBox2.Text = Math.Round(upsilon_Y, 6).ToString
@@ -121,15 +126,12 @@
 
     Private Sub DNV_chapter6_2()
         '============ Longitudinal uniform compression chapter 6.2 ===========
-        Dim fy, t, S, ym As Double
-        Dim E_mod As Double
+        Dim t, S As Double
+
         Dim lambda_P, Cx, sigma_Xrd As Double
 
-        fy = NumericUpDown13.Value          'Yield stress
         S = NumericUpDown12.Value           'Stiffeners distance
         t = NumericUpDown11.Value           'Plate thickness
-        E_mod = NumericUpDown7.Value        'Elasticity [N/mm2]
-        ym = NumericUpDown10.Value          'Safety
 
         lambda_P = 0.525 * S / t * Math.Sqrt(fy / E_mod)    'formule 6.3
 
@@ -139,7 +141,7 @@
             Cx = (lambda_P - 0.22) / lambda_P ^ 2
         End If
 
-        sigma_Xrd = Cx * fy / ym            'formule 6.1
+        sigma_Xrd = Cx * fy / Ym           'formule 6.1
 
         TextBox3.Text = Math.Round(lambda_P, 2).ToString
         TextBox15.Text = Math.Round(Cx, 2).ToString
@@ -148,16 +150,13 @@
 
     Private Sub DNV_chapter6_3()
         '============ Transverse uniform compression chapter 6.3 ===========
-        Dim fy, t, S, psd, ym As Double
-        Dim E_mod As Double
+        Dim t, S, psd As Double
         Dim length As Double
 
-        fy = NumericUpDown19.Value          'Yield stress
         S = NumericUpDown18.Value           'Stiffeners distance
         t = NumericUpDown17.Value           'Plate thickness
-        E_mod = NumericUpDown14.Value       'Elasticity [N/mm2]
-        ym = NumericUpDown16.Value          'Safety
         length = NumericUpDown15.Value      'stiffeners length
+        psd = NumericUpDown24.Value / 1000 ^ 2  '[N/mm2]
 
         '============ Transverserse uniform compression chapter 6.3===========
         Dim lambda_C, kappa, mu As Double
@@ -170,7 +169,7 @@
         If psd <= 2 * (t / S) ^ 2 * fy Then
             Kp = 1
         Else
-            Kp = 1 - h_alfa * (psd / fy - 2 * (t / s) ^ 2)
+            Kp = 1 - h_alfa * (psd / fy - 2 * (t / S) ^ 2)
             If Kp < 0 Then Kp = 0
         End If
 
@@ -204,12 +203,59 @@
         TextBox22.Text = Math.Round(sigma_YR, 0).ToString   '6.6
         TextBox24.Text = Math.Round(sigma_YRd, 0).ToString  '6.5
     End Sub
+    Private Sub DNV_chapter7_2()
+        '============ Forces in the idealised stiffener plate chapter 7.2 ===========
+        Dim t, S, sigma_Xsd, tau_tf, N_Sd, A_s As Double
+        Dim length As Double
+        Dim q_sd, psd, p_0 As Double
+
+        S = NumericUpDown18.Value           'Stiffeners distance
+        t = NumericUpDown17.Value           'Plate thickness
+        length = NumericUpDown15.Value      'stiffeners length
+        psd = NumericUpDown22.Value / 1000 ^ 2  '[N/mm2]
+        sigma_Xsd = NumericUpDown16.Value   'axial stress in plate and stiffener
+        tau_tf = NumericUpDown20.Value      'shear sress in plate and stiffener
+        A_s = NumericUpDown3.Value          'Area cross sectional stiffener
+
+        '========== Equivalent axial load ========== Formule 7.1
+        N_Sd = sigma_Xsd * (A_s + S * t) + tau_tf * S * t
+
+        '========== Equivalent lateral load ========== Formule 7.8
+        q_sd = (psd + p_0) * t
+
+
+        TextBox32.Text = Math.Round(N_Sd / 1000, 2).ToString     '7.1 [kN]
+        TextBox32.Text = Math.Round(q_sd / 1000, 2).ToString     '7.1 [kN]
+    End Sub
 
     Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+        get_material_data()
+
         TextBox23.Text =
         "Based on " & vbCrLf &
         "Recommended Practice DNV-RP-C201, October 2010" & vbCrLf &
         "Buckling Strength of plated structures" & vbCrLf &
-        "https://rules.dnvgl.com/servicedocuments/dnv"
+        "https://rules.dnvgl.com/servicedocuments/dnv" & vbCrLf & vbCrLf &
+        "See also" & vbCrLf &
+        "http://www.steelconstruction.info/Stiffeners"
+
+        TextBox25.Text =
+      vbTab & "Construction steel S235JR" & vbTab & "@ 20c" & vbTab & "235 [N/mm2]" & vbCrLf &
+      vbTab & "Construction steel S355JR" & vbTab & "@ 20c" & vbTab & "335 [N/mm2]" & vbCrLf &
+      vbTab & "Stainless steel 304L" & vbTab & vbTab & "@ 20c" & vbTab & "220 [N/mm2]" & vbCrLf &
+      vbTab & "Stainless steel 316L" & vbTab & vbTab & "@ 20c" & vbTab & "195 [N/mm2]"
+    End Sub
+
+    Private Sub Button4_Click(sender As Object, e As EventArgs) Handles Button4.Click, NumericUpDown7.ValueChanged, NumericUpDown19.ValueChanged, NumericUpDown10.ValueChanged
+        get_material_data()
+    End Sub
+    Private Sub get_material_data()
+        fy = NumericUpDown19.Value          'Yield stress
+        E_mod = NumericUpDown7.Value        'Elasticity [N/mm2]
+        Ym = NumericUpDown10.Value          'Safety
+    End Sub
+
+    Private Sub Button5_Click(sender As Object, e As EventArgs) Handles Button5.Click, NumericUpDown3.VisibleChanged, NumericUpDown23.VisibleChanged, NumericUpDown22.VisibleChanged, NumericUpDown21.VisibleChanged, NumericUpDown20.VisibleChanged, NumericUpDown16.VisibleChanged, NumericUpDown14.VisibleChanged, NumericUpDown13.VisibleChanged, GroupBox13.VisibleChanged
+        DNV_chapter7_2() 'Chapter 7.2
     End Sub
 End Class
