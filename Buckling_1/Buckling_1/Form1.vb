@@ -205,27 +205,59 @@ Public Class Form1
     End Sub
     Private Sub DNV_chapter7_2()
         '============ Forces in the idealised stiffener plate chapter 7.2 ===========
-        Dim t, S, sigma_Xsd, tau_tf, N_Sd, A_s As Double
-        Dim length As Double
-        Dim q_sd, psd, p_0 As Double
+        Dim t, S, sigma_Xsd, sigma_Y1sd, tau_tf, N_Sd, A_s As Double
+        Dim length, psi, I_s As Double
+        Dim q_sd, psd, p_0, C0, Kc As Double
 
         S = NumericUpDown18.Value           'Stiffeners distance
         t = NumericUpDown17.Value           'Plate thickness
         length = NumericUpDown15.Value      'stiffeners length
         psd = NumericUpDown22.Value / 1000 ^ 2  '[N/mm2]
-        sigma_Xsd = NumericUpDown16.Value   'axial stress in plate and stiffener
+        sigma_Xsd = NumericUpDown16.Value   'design stress axial stress in plate and stiffener
+        sigma_Y1sd = NumericUpDown25.Value   'design stress transverse direction
         tau_tf = NumericUpDown20.Value      'shear sress in plate and stiffener
         A_s = NumericUpDown3.Value          'Area cross sectional stiffener
 
-        '========== Equivalent axial load ========== Formule 7.1
-        N_Sd = sigma_Xsd * (A_s + S * t) + tau_tf * S * t
+        'Moment of inertia stiffener+plate
+        Dim I_stif, I_plate As Double
+        Dim Stif_Thick, Stif_Heigh As Double
+        Dim Wes, mc As Double
 
-        '========== Equivalent lateral load ========== Formule 7.8
-        q_sd = (psd + p_0) * t
+        Stif_Thick = NumericUpDown26.Value
+        Stif_Heigh = NumericUpDown27.Value
 
+        I_stif = Stif_Thick * Stif_Heigh ^ 3 / 3    'Stiffener
+        I_plate = S * t ^ 3 / 3                     'Plate
+        I_s = I_stif + I_plate
+        Wes = I_s / (Stif_Heigh * 0.5)              'section modulud plate at flange tip ?????
 
-        TextBox32.Text = Math.Round(N_Sd / 1000, 2).ToString     '7.1 [kN]
-        TextBox32.Text = Math.Round(q_sd / 1000, 2).ToString     '7.1 [kN]
+        TextBox30.Text = Math.Round(I_stif, 0).ToString
+        TextBox31.Text = Math.Round(I_plate, 0).ToString
+        TextBox33.Text = Math.Round(I_s, 0).ToString
+
+        '========== Equivalent axial load ========== 
+        N_Sd = sigma_Xsd * (A_s + S * t) + tau_tf * S * t 'Formule 7.1
+
+        '========== Equivalent lateral load ========== 
+        Kc = 2 * (1 + Sqrt(1 + (10.9 * I_s / (t ^ 3 * S))))   'Formula 7.12
+        psi = 1                             'Formula 7.11
+        If RadioButton1.Checked Then
+            mc = 13.3       'Continuous stiffeners
+        Else
+            mc = 8.9        'Snipped stiffeners
+        End If
+
+        C0 = Wes * fy * mc / (Kc * E_mod * t ^ 2 * S)   'Formula 7.11 
+        'p_0 formula is not applicable                  'Formula 7.10
+        p_0 = (0.6 + 0.4) * C0 * sigma_Y1sd             'Formula 7.9
+        q_sd = (psd + p_0) * t                          'Formula 7.8
+
+        TextBox27.Text = Math.Round(C0, 7).ToString
+        TextBox28.Text = Math.Round(psi, 2).ToString
+        TextBox29.Text = Math.Round(Kc, 2).ToString
+        TextBox32.Text = Math.Round(N_Sd / 1000, 2).ToString
+        TextBox34.Text = Math.Round(p_0, 6).ToString
+        TextBox26.Text = Math.Round(q_sd, 2).ToString
     End Sub
 
     Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
@@ -255,7 +287,9 @@ Public Class Form1
         Ym = NumericUpDown10.Value          'Safety
     End Sub
 
-    Private Sub Button5_Click(sender As Object, e As EventArgs) Handles Button5.Click, NumericUpDown3.VisibleChanged, NumericUpDown23.VisibleChanged, NumericUpDown22.VisibleChanged, NumericUpDown21.VisibleChanged, NumericUpDown20.VisibleChanged, NumericUpDown16.VisibleChanged, NumericUpDown14.VisibleChanged, NumericUpDown13.VisibleChanged, GroupBox13.VisibleChanged
+    Private Sub Button5_Click(sender As Object, e As EventArgs) Handles Button5.Click, NumericUpDown20.VisibleChanged, GroupBox13.VisibleChanged, NumericUpDown27.ValueChanged, NumericUpDown26.ValueChanged, NumericUpDown22.ValueChanged, NumericUpDown21.ValueChanged, NumericUpDown3.ValueChanged, NumericUpDown20.ValueChanged, NumericUpDown16.ValueChanged, NumericUpDown14.ValueChanged, NumericUpDown13.ValueChanged, RadioButton2.CheckedChanged, RadioButton1.CheckedChanged
         DNV_chapter7_2() 'Chapter 7.2
     End Sub
+
+
 End Class
