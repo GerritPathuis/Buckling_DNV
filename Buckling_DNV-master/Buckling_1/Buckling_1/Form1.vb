@@ -279,11 +279,13 @@ Public Class Form1
         TextBox27.Text = Math.Round(C0, 7).ToString
         TextBox28.Text = Math.Round(psi, 2).ToString
         TextBox29.Text = Math.Round(Kc, 2).ToString
-        TextBox32.Text = Math.Round(N_Sd / 1000, 2).ToString
+        TextBox32.Text = Math.Round(N_Sd / 1000, 2).ToString    '[kN]
+        TextBox39.Text = Math.Round(N_Sd / 10000, 2).ToString   '[Ton]
         TextBox34.Text = Math.Round(p_0, 6).ToString
         TextBox26.Text = Math.Round(q_sd, 2).ToString
         TextBox35.Text = Math.Round(tau_crl, 0).ToString
         TextBox36.Text = Math.Round(K_l, 2).ToString
+        TextBox37.Text = Math.Round(k_g, 2).ToString
         TextBox38.Text = Math.Round(tau_crg, 0).ToString
     End Sub
 
@@ -314,7 +316,7 @@ Public Class Form1
         Ym = NumericUpDown10.Value          'Safety
     End Sub
 
-    Private Sub Button5_Click(sender As Object, e As EventArgs) Handles RadioButton2.CheckedChanged, RadioButton1.CheckedChanged, NumericUpDown3.ValueChanged, NumericUpDown27.ValueChanged, NumericUpDown26.ValueChanged, NumericUpDown22.ValueChanged, NumericUpDown20.VisibleChanged, NumericUpDown20.ValueChanged, NumericUpDown16.ValueChanged, NumericUpDown14.ValueChanged, NumericUpDown13.ValueChanged, GroupBox13.VisibleChanged, Button5.Click
+    Private Sub Button5_Click(sender As Object, e As EventArgs) Handles RadioButton2.CheckedChanged, RadioButton1.CheckedChanged, NumericUpDown3.ValueChanged, NumericUpDown27.ValueChanged, NumericUpDown26.ValueChanged, NumericUpDown22.ValueChanged, NumericUpDown20.VisibleChanged, NumericUpDown20.ValueChanged, NumericUpDown16.ValueChanged, NumericUpDown14.ValueChanged, NumericUpDown13.ValueChanged, GroupBox13.VisibleChanged, Button5.Click, NumericUpDown28.ValueChanged, NumericUpDown25.ValueChanged, NumericUpDown23.ValueChanged
         DNV_chapter7_2() 'Chapter 7.2
     End Sub
 
