@@ -275,12 +275,10 @@ Public Class Form1
         '========== Equivalent axial load ========== 
         N_Sd = sigma_Xsd * (A_s + S * t) + tau_tf * S * t 'Formule 7.1
 
-
         TextBox27.Text = Math.Round(C0, 7).ToString
         TextBox28.Text = Math.Round(psi, 2).ToString
         TextBox29.Text = Math.Round(Kc, 2).ToString
-        TextBox32.Text = Math.Round(N_Sd / 1000, 2).ToString    '[kN]
-        TextBox39.Text = Math.Round(N_Sd / 10000, 2).ToString   '[Ton]
+        TextBox40.Text = Math.Round(N_Sd * 0.001, 1).ToString    '[kN]
         TextBox34.Text = Math.Round(p_0, 6).ToString
         TextBox26.Text = Math.Round(q_sd, 2).ToString
         TextBox35.Text = Math.Round(tau_crl, 0).ToString
@@ -320,5 +318,11 @@ Public Class Form1
         DNV_chapter7_2() 'Chapter 7.2
     End Sub
 
+    Private Sub GroupBox15_Enter(sender As Object, e As EventArgs) Handles GroupBox15.Enter
 
+    End Sub
+
+    Private Sub Label133_Click(sender As Object, e As EventArgs) Handles Label133.Click
+
+    End Sub
 End Class
