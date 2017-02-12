@@ -8,19 +8,19 @@ Public Class Form1
     Dim E_mod As Double         'Elasticity [N/mm2]
 
 
-    Private Sub Button6_Click(sender As Object, e As EventArgs) Handles Button6.Click, NumericUpDown45.ValueChanged, NumericUpDown44.ValueChanged, NumericUpDown43.ValueChanged, NumericUpDown42.ValueChanged, NumericUpDown39.ValueChanged, NumericUpDown36.ValueChanged, NumericUpDown47.ValueChanged, NumericUpDown46.ValueChanged
+    Private Sub Button6_Click(sender As Object, e As EventArgs) Handles NumericUpDown47.ValueChanged, NumericUpDown46.ValueChanged, NumericUpDown45.ValueChanged, NumericUpDown44.ValueChanged, NumericUpDown43.ValueChanged, NumericUpDown42.ValueChanged, NumericUpDown39.ValueChanged, NumericUpDown36.ValueChanged, Button6.Click
         DNV_chapter5_0()
     End Sub
 
-    Private Sub Button2_Click(sender As Object, e As EventArgs) Handles Button2.Click, TabPage2.Enter, NumericUpDown8.ValueChanged, NumericUpDown12.ValueChanged, NumericUpDown11.ValueChanged
+    Private Sub Button2_Click(sender As Object, e As EventArgs) Handles TabPage2.Enter, NumericUpDown8.ValueChanged, NumericUpDown12.ValueChanged, NumericUpDown11.ValueChanged, Button2.Click
         DNV_chapter6_2()    'Unstiffened plate longitudinal uniform loading
     End Sub
 
-    Private Sub Button3_Click(sender As Object, e As EventArgs) Handles Button3.Click, TabPage3.Enter, NumericUpDown18.ValueChanged, NumericUpDown17.ValueChanged, NumericUpDown15.ValueChanged, NumericUpDown24.ValueChanged
+    Private Sub Button3_Click(sender As Object, e As EventArgs) Handles TabPage3.Enter, NumericUpDown24.ValueChanged, NumericUpDown18.ValueChanged, NumericUpDown17.ValueChanged, NumericUpDown15.ValueChanged, Button3.Click
         DNV_chapter6_3()    'Unstiffened plate transverse uniform loading
     End Sub
 
-    Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click, NumericUpDown9.ValueChanged, NumericUpDown6.ValueChanged, NumericUpDown5.ValueChanged, NumericUpDown4.ValueChanged, NumericUpDown2.ValueChanged, NumericUpDown1.ValueChanged, TabPage1.Enter
+    Private Sub Button1_Click(sender As Object, e As EventArgs) Handles TabPage1.Enter, NumericUpDown9.ValueChanged, NumericUpDown6.ValueChanged, NumericUpDown5.ValueChanged, NumericUpDown4.ValueChanged, NumericUpDown2.ValueChanged, NumericUpDown1.ValueChanged, Button1.Click
         'Determine the weight and the stress due to weight
         Dim box_l, box_w, box_h, box_thick As Double
         Dim w_roof, w_longpanel, w_shortpanel As Double
@@ -111,17 +111,24 @@ Public Class Form1
         'Psd Check (formula 5.1)
         Psd_check = 4 * fy / Ym * ((t / s) ^ 2) * (upsilon_Y + ((s / length) ^ 2 * upsilon_X))
 
-        TextBox1.Text = Math.Round(upsilon_X, 6).ToString
-        TextBox2.Text = Math.Round(upsilon_Y, 6).ToString
+        TextBox1.Text = Math.Round(upsilon_X, 4).ToString
+        TextBox2.Text = Math.Round(upsilon_Y, 4).ToString
         TextBox4.Text = Math.Round(Psd_check, 4).ToString
 
         'Checks
         NumericUpDown39.BackColor = IIf(s < length, Color.Yellow, Color.LightCoral)
         NumericUpDown47.BackColor = IIf(s < length, Color.Yellow, Color.LightCoral)
-        TextBox4.BackColor = IIf(Psd < Psd_check, Color.LightGreen, Color.LightCoral)
+
+        If Psd < Psd_check Then
+            TextBox4.BackColor = Color.LightGreen
+            Label118.Visible = False
+        Else
+            TextBox4.BackColor = Color.Red
+            Label118.Visible = True
+        End If
 
         epsilon = Math.Sqrt(235 / fy)
-        Label18.Text = IIf(s / t < 5.4 * epsilon, "Buckling check NOT neccessary", "Buckling check is neccessary")
+        Label18.Text = IIf(s / t < 5.4 * epsilon, "Buckling check NOT neccessary", "Buckling check is neccessary !!")
     End Sub
 
     Private Sub DNV_chapter6_2()
@@ -193,7 +200,7 @@ Public Class Form1
         sigma_YR *= fy * Kp
 
         '========== sigma_YR ========== Formule 6.5
-        sigma_YRd = sigma_YR / ym
+        sigma_YRd = sigma_YR / Ym
 
         TextBox17.Text = Math.Round(h_alfa, 2).ToString     '6.11
         TextBox18.Text = Math.Round(Kp, 2).ToString         '6.10
@@ -205,13 +212,16 @@ Public Class Form1
     End Sub
     Private Sub DNV_chapter7_2()
         '============ Forces in the idealised stiffener plate chapter 7.2 ===========
-        Dim t, S, sigma_Xsd, sigma_Y1sd, tau_tf, N_Sd, A_s As Double
-        Dim length, psi, I_s As Double
+        Dim t, S, sigma_Xsd, sigma_Y1sd, N_Sd, A_s As Double
+        Dim tau_tf, tau_crl, tau_crg As Double
+        Dim length, LG, psi, I_s As Double
         Dim q_sd, psd, p_0, C0, Kc As Double
+        Dim K_l, k_g As Double
 
         S = NumericUpDown14.Value           'Stiffeners distance
         t = NumericUpDown13.Value           'Plate thickness
         length = NumericUpDown23.Value      'stiffeners length
+        LG = NumericUpDown28.Value          'Girder length
         psd = NumericUpDown22.Value / 1000 ^ 2  '[N/mm2]
         sigma_Xsd = NumericUpDown16.Value   'design stress axial stress in plate and stiffener
         sigma_Y1sd = NumericUpDown25.Value   'design stress transverse direction
@@ -235,8 +245,6 @@ Public Class Form1
         TextBox31.Text = Math.Round(I_plate, 0).ToString
         TextBox33.Text = Math.Round(I_s, 0).ToString
 
-        '========== Equivalent axial load ========== 
-        N_Sd = sigma_Xsd * (A_s + S * t) + tau_tf * S * t 'Formule 7.1
 
         '========== Equivalent lateral load ========== 
         Kc = 2 * (1 + Sqrt(1 + (10.9 * I_s / (t ^ 3 * S))))   'Formula 7.12
@@ -251,6 +259,22 @@ Public Class Form1
         'p_0 formula is not applicable                  'Formula 7.10
         p_0 = (0.6 + 0.4) * C0 * sigma_Y1sd             'Formula 7.9
         q_sd = (psd + p_0) * t                          'Formula 7.8
+        If length >= S Then
+            K_l = 5.34 + 4 * (t / S) ^ 2                'Formula 7.7
+        Else
+            K_l = 5.34 * (t / S) ^ 2 + 4
+        End If
+        tau_crl = K_l * 0.904 * E_mod * (t / S) ^ 2     'Formula 7.6
+        If length <= LG Then
+            k_g = 5.34 + 4 * (length / LG) ^ 2          'Formula 7.5
+        Else
+            k_g = 5.34 * (length / LG) ^ 2 + 4
+        End If
+        tau_crg = k_g * 0.904 * E_mod * (t / length) ^ 2 'Formula 7.4
+
+        '========== Equivalent axial load ========== 
+        N_Sd = sigma_Xsd * (A_s + S * t) + tau_tf * S * t 'Formule 7.1
+
 
         TextBox27.Text = Math.Round(C0, 7).ToString
         TextBox28.Text = Math.Round(psi, 2).ToString
@@ -258,6 +282,9 @@ Public Class Form1
         TextBox32.Text = Math.Round(N_Sd / 1000, 2).ToString
         TextBox34.Text = Math.Round(p_0, 6).ToString
         TextBox26.Text = Math.Round(q_sd, 2).ToString
+        TextBox35.Text = Math.Round(tau_crl, 0).ToString
+        TextBox36.Text = Math.Round(K_l, 2).ToString
+        TextBox38.Text = Math.Round(tau_crg, 0).ToString
     End Sub
 
     Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
@@ -278,7 +305,7 @@ Public Class Form1
       vbTab & "Stainless steel 316L" & vbTab & vbTab & "@ 20c" & vbTab & "195 [N/mm2]"
     End Sub
 
-    Private Sub Button4_Click(sender As Object, e As EventArgs) Handles Button4.Click, NumericUpDown7.ValueChanged, NumericUpDown19.ValueChanged, NumericUpDown10.ValueChanged
+    Private Sub Button4_Click(sender As Object, e As EventArgs) Handles NumericUpDown7.ValueChanged, NumericUpDown19.ValueChanged, NumericUpDown10.ValueChanged, Button4.Click
         get_material_data()
     End Sub
     Private Sub get_material_data()
@@ -287,7 +314,7 @@ Public Class Form1
         Ym = NumericUpDown10.Value          'Safety
     End Sub
 
-    Private Sub Button5_Click(sender As Object, e As EventArgs) Handles Button5.Click, NumericUpDown20.VisibleChanged, GroupBox13.VisibleChanged, NumericUpDown27.ValueChanged, NumericUpDown26.ValueChanged, NumericUpDown22.ValueChanged, NumericUpDown21.ValueChanged, NumericUpDown3.ValueChanged, NumericUpDown20.ValueChanged, NumericUpDown16.ValueChanged, NumericUpDown14.ValueChanged, NumericUpDown13.ValueChanged, RadioButton2.CheckedChanged, RadioButton1.CheckedChanged
+    Private Sub Button5_Click(sender As Object, e As EventArgs) Handles RadioButton2.CheckedChanged, RadioButton1.CheckedChanged, NumericUpDown3.ValueChanged, NumericUpDown27.ValueChanged, NumericUpDown26.ValueChanged, NumericUpDown22.ValueChanged, NumericUpDown20.VisibleChanged, NumericUpDown20.ValueChanged, NumericUpDown16.ValueChanged, NumericUpDown14.ValueChanged, NumericUpDown13.ValueChanged, GroupBox13.VisibleChanged, Button5.Click
         DNV_chapter7_2() 'Chapter 7.2
     End Sub
 
