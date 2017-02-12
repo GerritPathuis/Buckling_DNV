@@ -210,6 +210,36 @@ Public Class Form1
         TextBox22.Text = Math.Round(sigma_YR, 0).ToString   '6.6
         TextBox24.Text = Math.Round(sigma_YRd, 0).ToString  '6.5
     End Sub
+
+    Private Sub DNV_chapter6_6()
+        Dim t, S, sigma_Xsd, sigma_xRd, kappa_sigma, upsilon, lambda_P, Psi, cx As Double
+
+        S = NumericUpDown21.Value           'Plate width
+        t = NumericUpDown29.Value           'Plate thickness
+        Psi = 1                             'Stress ratio is 1.0
+        sigma_Xsd = 99999999999999999       '?????????????????
+
+
+        kappa_sigma = 8.2 / (1.05 + 1)      'Formula 6.44
+
+        '------------- slenderness calculation--------------------
+        upsilon = Sqrt(235 / fy)
+        lambda_P = S / t * 1 / (28.4 * upsilon * Sqrt(kappa_sigma)) 'Formula 6.24
+
+        If lambda_P <= 0.673 Then
+            cx = 1                          'Formula 6.22
+        Else
+            cx = (lambda_P - 0.055 * (3 + 1)) / lambda_P ^ 2     'Formula 6.23
+        End If
+
+        sigma_xRd = cx * fy / Ym            'Formula 6.21
+
+        TextBox50.Text = Math.Round(kappa_sigma, 2).ToString
+        TextBox51.Text = Math.Round(upsilon, 2).ToString
+        TextBox52.Text = Math.Round(cx, 2).ToString
+        TextBox53.Text = Math.Round(sigma_xRd, 0).ToString
+        TextBox54.Text = Math.Round(lambda_P, 2).ToString
+    End Sub
     Private Sub DNV_chapter7_2()
         '============ Forces in the idealised stiffener plate chapter 7.2 ===========
         Dim t, S, sigma_Xsd, sigma_Y1sd, N_Sd, A_s As Double
@@ -224,7 +254,7 @@ Public Class Form1
         LG = NumericUpDown28.Value          'Girder length
         psd = NumericUpDown22.Value / 1000 ^ 2  '[N/mm2]
         sigma_Xsd = NumericUpDown16.Value   'design stress axial stress in plate and stiffener
-        sigma_Y1sd = NumericUpDown25.Value   'design stress transverse direction
+        sigma_Y1sd = NumericUpDown25.Value  'design stress transverse direction
         tau_tf = NumericUpDown20.Value      'shear sress in plate and stiffener
         A_s = NumericUpDown3.Value          'Area cross sectional stiffener
 
@@ -286,6 +316,44 @@ Public Class Form1
         TextBox37.Text = Math.Round(k_g, 2).ToString
         TextBox38.Text = Math.Round(tau_crg, 0).ToString
     End Sub
+    Private Sub DNV_chapter7_3()
+        Dim t, S, sigma_Xsd, sigma_Ysd, sigma_Yr As Double
+        Dim Cys, Cxs, Ci, lambda_p, Se As Double
+        S = NumericUpDown14.Value           'Stiffeners distance
+        t = NumericUpDown13.Value           'Plate thickness
+        sigma_Xsd = NumericUpDown16.Value   'design stress axial stress in plate and stiffener
+        sigma_Ysd = NumericUpDown25.Value   'design stress transverse direction
+        sigma_Yr = 999999                   'formula 6.6
+
+        '--------------- formula 7.17---
+        If (S / t <= 120) Then
+            Ci = 1 - (S / 120 * t)
+        Else
+            Ci = 0
+        End If
+
+        Cys = (sigma_Ysd / sigma_Yr) ^ 2
+        Cys += Ci * (sigma_Xsd * sigma_Ysd / (Cxs * fy * sigma_Yr))
+        Cys = Sqrt(1 - Cys)
+        '--------------- formula 7.15---
+        lambda_p = 0.525 * S / t * Sqrt(fy / E_mod)
+
+        '--------------- formula 7.14---
+        Cxs = lambda_p - 0.22 / lambda_p ^ 2
+
+        '--------------- formula 7.13---
+        Se = S * Cxs * Cys
+
+        TextBox41.Text = Math.Round(S, 0).ToString
+        TextBox42.Text = Math.Round(t, 0).ToString
+        TextBox44.Text = Math.Round(sigma_Xsd, 0).ToString
+        TextBox43.Text = Math.Round(sigma_Ysd, 0).ToString
+        TextBox45.Text = Math.Round(fy, 0).ToString
+        TextBox46.Text = Math.Round(Cxs, 0).ToString
+        TextBox47.Text = Math.Round(Cys, 0).ToString
+        TextBox48.Text = Math.Round(sigma_Yr, 0).ToString
+        TextBox49.Text = Math.Round(Se, 0).ToString
+    End Sub
 
     Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
         get_material_data()
@@ -318,11 +386,13 @@ Public Class Form1
         DNV_chapter7_2() 'Chapter 7.2
     End Sub
 
-    Private Sub GroupBox15_Enter(sender As Object, e As EventArgs) Handles GroupBox15.Enter
-
+    Private Sub Button7_Click(sender As Object, e As EventArgs) Handles Button7.Click, TabPage9.Enter
+        DNV_chapter7_3() 'Chapter 7.3
     End Sub
 
-    Private Sub Label133_Click(sender As Object, e As EventArgs) Handles Label133.Click
-
+    Private Sub Button8_Click(sender As Object, e As EventArgs) Handles Button8.Click, TabPage4.Enter, NumericUpDown29.ValueChanged, NumericUpDown21.ValueChanged
+        DNV_chapter6_6() 'Chapter 6.6
     End Sub
+
+
 End Class
