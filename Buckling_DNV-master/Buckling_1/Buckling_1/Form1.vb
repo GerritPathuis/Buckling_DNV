@@ -209,9 +209,9 @@ Public Class Form1
         Dim length, psi, I_s As Double
         Dim q_sd, psd, p_0, C0, Kc As Double
 
-        S = NumericUpDown18.Value           'Stiffeners distance
-        t = NumericUpDown17.Value           'Plate thickness
-        length = NumericUpDown15.Value      'stiffeners length
+        S = NumericUpDown14.Value           'Stiffeners distance
+        t = NumericUpDown13.Value           'Plate thickness
+        length = NumericUpDown23.Value      'stiffeners length
         psd = NumericUpDown22.Value / 1000 ^ 2  '[N/mm2]
         sigma_Xsd = NumericUpDown16.Value   'design stress axial stress in plate and stiffener
         sigma_Y1sd = NumericUpDown25.Value   'design stress transverse direction
