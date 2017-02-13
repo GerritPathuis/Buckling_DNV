@@ -7,20 +7,17 @@ Public Class Form1
     Dim Ym As Double            'Safety factor
     Dim E_mod As Double         'Elasticity [N/mm2]
 
-
     Private Sub Button6_Click(sender As Object, e As EventArgs) Handles NumericUpDown47.ValueChanged, NumericUpDown46.ValueChanged, NumericUpDown45.ValueChanged, NumericUpDown44.ValueChanged, NumericUpDown43.ValueChanged, NumericUpDown42.ValueChanged, NumericUpDown39.ValueChanged, NumericUpDown36.ValueChanged, Button6.Click
         DNV_chapter5_0()
     End Sub
 
     Private Sub Button2_Click(sender As Object, e As EventArgs) Handles TabPage2.Enter, NumericUpDown8.ValueChanged, NumericUpDown12.ValueChanged, NumericUpDown11.ValueChanged, Button2.Click
         DNV_chapter6_2()    'Unstiffened plate longitudinal uniform loading
-    End Sub
-
-    Private Sub Button3_Click(sender As Object, e As EventArgs) Handles TabPage3.Enter, NumericUpDown24.ValueChanged, NumericUpDown18.ValueChanged, NumericUpDown17.ValueChanged, NumericUpDown15.ValueChanged, Button3.Click
         DNV_chapter6_3()    'Unstiffened plate transverse uniform loading
     End Sub
 
-    Private Sub Button1_Click(sender As Object, e As EventArgs) Handles TabPage1.Enter, NumericUpDown9.ValueChanged, NumericUpDown6.ValueChanged, NumericUpDown5.ValueChanged, NumericUpDown4.ValueChanged, NumericUpDown2.ValueChanged, NumericUpDown1.ValueChanged, Button1.Click
+
+    Private Sub Button1_Click(sender As Object, e As EventArgs) Handles TabPage1.Enter, NumericUpDown9.ValueChanged, NumericUpDown5.ValueChanged, NumericUpDown4.ValueChanged, NumericUpDown2.ValueChanged, NumericUpDown1.ValueChanged, Button1.Click
         'Determine the weight and the stress due to weight
         Dim box_l, box_w, box_h, box_thick As Double
         Dim w_roof, w_longpanel, w_shortpanel As Double
@@ -95,20 +92,20 @@ Public Class Form1
         sigma_Ysd = NumericUpDown42.Value
         tau_sd = NumericUpDown44.Value
 
-        'Calc Von misses (formula 5.4)
+        'Calc Von misses (equation 5.4)
         sigma_Jsd = Math.Sqrt(sigma_Xsd ^ 2 + sigma_Ysd ^ 2 - sigma_Xsd * sigma_Ysd + 3 * tau_sd ^ 2)
         NumericUpDown46.Value = sigma_Jsd
 
-        'Calc constant (formula 5.2)
+        'Calc constant (equation 5.2)
         upsilon_Y = 1 - (sigma_Jsd / fy) ^ 2
         upsilon_Y = upsilon_Y / Math.Sqrt(1 - 3 / 4 * (sigma_Xsd / fy) ^ 2) - 3 * (tau_sd / fy) ^ 2
 
-        'Calc constant (formula 5.3)
+        'Calc constant (equation 5.3)
         upsilon_X = 1 - (sigma_Jsd / fy) ^ 2
         upsilon_X /= Math.Sqrt(1 - 3 / 4 * (sigma_Ysd / fy) ^ 2) - 3 * (tau_sd / fy) ^ 2
 
 
-        'Psd Check (formula 5.1)
+        'Psd Check (equation 5.1)
         Psd_check = 4 * fy / Ym * ((t / s) ^ 2) * (upsilon_Y + ((s / length) ^ 2 * upsilon_X))
 
         TextBox1.Text = Math.Round(upsilon_X, 4).ToString
@@ -135,8 +132,9 @@ Public Class Form1
         '============ Longitudinal uniform compression chapter 6.2 ===========
         Dim t, S As Double
 
-        Dim lambda_P, Cx, sigma_Xrd As Double
+        Dim lambda_P, Cx, sigma_Xrd, sigma_Xsd As Double
 
+        sigma_Xsd = NumericUpDown43.Value   'Design stress
         S = NumericUpDown12.Value           'Stiffeners distance
         t = NumericUpDown11.Value           'Plate thickness
 
@@ -153,16 +151,18 @@ Public Class Form1
         TextBox3.Text = Math.Round(lambda_P, 2).ToString
         TextBox15.Text = Math.Round(Cx, 2).ToString
         TextBox16.Text = Math.Round(sigma_Xrd, 0).ToString
+        TextBox63.Text = Math.Round(sigma_Xsd, 0).ToString
     End Sub
 
     Private Sub DNV_chapter6_3()
         '============ Transverse uniform compression chapter 6.3 ===========
-        Dim t, S, psd As Double
+        Dim t, S, psd, sigma_Ysd As Double
         Dim length As Double
 
-        S = NumericUpDown18.Value           'Stiffeners distance
-        t = NumericUpDown17.Value           'Plate thickness
-        length = NumericUpDown15.Value      'stiffeners length
+        sigma_Ysd = NumericUpDown43.Value   'Design stress
+        S = NumericUpDown12.Value           'Stiffeners distance
+        t = NumericUpDown11.Value           'Plate thickness
+        length = NumericUpDown8.Value      'stiffeners length
         psd = NumericUpDown24.Value / 1000 ^ 2  '[N/mm2]
 
         '============ Transverserse uniform compression chapter 6.3===========
@@ -202,13 +202,22 @@ Public Class Form1
         '========== sigma_YR ========== Formule 6.5
         sigma_YRd = sigma_YR / Ym
 
+        TextBox65.Text = Math.Round(S, 1).ToString
+        TextBox66.Text = Math.Round(length, 2).ToString
+        TextBox67.Text = Math.Round(t, 1).ToString
+
         TextBox17.Text = Math.Round(h_alfa, 2).ToString     '6.11
         TextBox18.Text = Math.Round(Kp, 2).ToString         '6.10
         TextBox19.Text = Math.Round(mu, 0).ToString         '6.9
         TextBox20.Text = Math.Round(lambda_C, 2).ToString   '6.8
         TextBox21.Text = Math.Round(kappa, 2).ToString      '6.7
         TextBox22.Text = Math.Round(sigma_YR, 0).ToString   '6.6
+
         TextBox24.Text = Math.Round(sigma_YRd, 0).ToString  '6.5
+        TextBox64.Text = Math.Round(sigma_Ysd, 0).ToString
+
+        '---------------- Check stress------------------
+        TextBox16.BackColor = IIf(sigma_YRd >= sigma_Ysd, Color.LightGreen, Color.Red)
     End Sub
 
     Private Sub DNV_chapter6_6()
@@ -217,29 +226,74 @@ Public Class Form1
         S = NumericUpDown21.Value           'Plate width
         t = NumericUpDown29.Value           'Plate thickness
         Psi = 1                             'Stress ratio is 1.0
-        sigma_Xsd = 99999999999999999       '?????????????????
+        sigma_Xsd = NumericUpDown43.Value   'Design stress
 
 
-        kappa_sigma = 8.2 / (1.05 + 1)      'Formula 6.44
+        kappa_sigma = 8.2 / (1.05 + 1)      'equation 6.44
 
         '------------- slenderness calculation--------------------
         upsilon = Sqrt(235 / fy)
-        lambda_P = S / t * 1 / (28.4 * upsilon * Sqrt(kappa_sigma)) 'Formula 6.24
+        lambda_P = S / t * 1 / (28.4 * upsilon * Sqrt(kappa_sigma)) 'equation 6.24
 
         If lambda_P <= 0.673 Then
-            cx = 1                          'Formula 6.22
+            cx = 1                          'equation 6.22
         Else
-            cx = (lambda_P - 0.055 * (3 + 1)) / lambda_P ^ 2     'Formula 6.23
+            cx = (lambda_P - 0.055 * (3 + 1)) / lambda_P ^ 2     'equation 6.23
         End If
 
-        sigma_xRd = cx * fy / Ym            'Formula 6.21
+        sigma_xRd = cx * fy / Ym            'equation 6.21
 
         TextBox50.Text = Math.Round(kappa_sigma, 2).ToString
         TextBox51.Text = Math.Round(upsilon, 2).ToString
         TextBox52.Text = Math.Round(cx, 2).ToString
-        TextBox53.Text = Math.Round(sigma_xRd, 0).ToString
+        TextBox53.Text = Math.Round(sigma_xRd, 1).ToString
         TextBox54.Text = Math.Round(lambda_P, 2).ToString
+        TextBox61.Text = Math.Round(sigma_Xsd, 2).ToString
+
+        '---------------- Check stress------------------
+        TextBox24.BackColor = IIf(sigma_xRd >= sigma_Xsd, Color.LightGreen, Color.Red)
     End Sub
+    Private Sub DNV_chapter6_7()
+        Dim t, S, sigma_Xsd, sigma_xRd, kappa_sigma, upsilon, lambda_P, Psi, cx As Double
+
+        S = NumericUpDown21.Value           'Plate width
+        t = NumericUpDown29.Value           'Plate thickness
+        Psi = 1                             'Stress ratio is 1.0
+        sigma_Xsd = NumericUpDown43.Value   'Design stress
+
+        If RadioButton3.Checked Then
+            kappa_sigma = 0.57 - 0.21 * Psi + 0.07 * Psi ^ 2
+        Else
+            kappa_sigma = 0.578 / (0.34 + Psi)
+        End If
+
+        '------------- slenderness calculation--------------------
+        upsilon = Sqrt(235 / fy)
+
+        lambda_P = S / t * 1 / (28.4 * upsilon * Sqrt(kappa_sigma)) 'equation 6.29
+
+        If lambda_P <= 0.749 Then
+            cx = 1                          'equation 6.22
+        Else
+            cx = (lambda_P - 0.188) / lambda_P ^ 2     'equation 6.28
+        End If
+
+        sigma_xRd = cx * fy / Ym            'equation 6.21
+
+        TextBox55.Text = Math.Round(kappa_sigma, 2).ToString
+        TextBox56.Text = Math.Round(upsilon, 2).ToString
+        TextBox57.Text = Math.Round(cx, 2).ToString
+        TextBox58.Text = Math.Round(sigma_xRd, 1).ToString
+        TextBox59.Text = Math.Round(t, 1).ToString
+        TextBox60.Text = Math.Round(S, 0).ToString
+        TextBox13.Text = Math.Round(lambda_P, 2).ToString
+        TextBox62.Text = Math.Round(sigma_Xsd, 2).ToString
+
+        '---------------- Check stress------------------
+        TextBox58.BackColor = IIf(sigma_xRd >= sigma_Xsd, Color.LightGreen, Color.Red)
+
+    End Sub
+
     Private Sub DNV_chapter7_2()
         '============ Forces in the idealised stiffener plate chapter 7.2 ===========
         Dim t, S, sigma_Xsd, sigma_Y1sd, N_Sd, A_s As Double
@@ -277,30 +331,30 @@ Public Class Form1
 
 
         '========== Equivalent lateral load ========== 
-        Kc = 2 * (1 + Sqrt(1 + (10.9 * I_s / (t ^ 3 * S))))   'Formula 7.12
-        psi = 1                             'Formula 7.11
+        Kc = 2 * (1 + Sqrt(1 + (10.9 * I_s / (t ^ 3 * S))))   'equation 7.12
+        psi = 1                             'equation 7.11
         If RadioButton1.Checked Then
             mc = 13.3       'Continuous stiffeners
         Else
             mc = 8.9        'Snipped stiffeners
         End If
 
-        C0 = Wes * fy * mc / (Kc * E_mod * t ^ 2 * S)   'Formula 7.11 
-        'p_0 formula is not applicable                  'Formula 7.10
-        p_0 = (0.6 + 0.4) * C0 * sigma_Y1sd             'Formula 7.9
-        q_sd = (psd + p_0) * t                          'Formula 7.8
+        C0 = Wes * fy * mc / (Kc * E_mod * t ^ 2 * S)   'equation 7.11 
+        'p_0 equation is not applicable                  'equation 7.10
+        p_0 = (0.6 + 0.4) * C0 * sigma_Y1sd             'equation 7.9
+        q_sd = (psd + p_0) * t                          'equation 7.8
         If length >= S Then
-            K_l = 5.34 + 4 * (t / S) ^ 2                'Formula 7.7
+            K_l = 5.34 + 4 * (t / S) ^ 2                'equation 7.7
         Else
             K_l = 5.34 * (t / S) ^ 2 + 4
         End If
-        tau_crl = K_l * 0.904 * E_mod * (t / S) ^ 2     'Formula 7.6
+        tau_crl = K_l * 0.904 * E_mod * (t / S) ^ 2     'equation 7.6
         If length <= LG Then
-            k_g = 5.34 + 4 * (length / LG) ^ 2          'Formula 7.5
+            k_g = 5.34 + 4 * (length / LG) ^ 2          'equation 7.5
         Else
             k_g = 5.34 * (length / LG) ^ 2 + 4
         End If
-        tau_crg = k_g * 0.904 * E_mod * (t / length) ^ 2 'Formula 7.4
+        tau_crg = k_g * 0.904 * E_mod * (t / length) ^ 2 'equation 7.4
 
         '========== Equivalent axial load ========== 
         N_Sd = sigma_Xsd * (A_s + S * t) + tau_tf * S * t 'Formule 7.1
@@ -323,25 +377,27 @@ Public Class Form1
         t = NumericUpDown13.Value           'Plate thickness
         sigma_Xsd = NumericUpDown16.Value   'design stress axial stress in plate and stiffener
         sigma_Ysd = NumericUpDown25.Value   'design stress transverse direction
-        sigma_Yr = 999999                   'formula 6.6
 
-        '--------------- formula 7.17---
+        Double.TryParse(TextBox22.Text, sigma_Yr)       'equation 6.6
+
+        '--------------- equation 7.15---
+        lambda_p = 0.525 * S / t * Sqrt(fy / E_mod)
+
+        '--------------- equation 7.14---
+        Cxs = (lambda_p - 0.22) / lambda_p ^ 2
+
+        '--------------- equation 7.16---
         If (S / t <= 120) Then
-            Ci = 1 - (S / 120 * t)
+            Ci = 1 - (S / (120 * t))
         Else
             Ci = 0
         End If
 
         Cys = (sigma_Ysd / sigma_Yr) ^ 2
-        Cys += Ci * (sigma_Xsd * sigma_Ysd / (Cxs * fy * sigma_Yr))
+        Cys = Cys + Ci * (sigma_Xsd * sigma_Ysd / (Cxs * fy * sigma_Yr))
         Cys = Sqrt(1 - Cys)
-        '--------------- formula 7.15---
-        lambda_p = 0.525 * S / t * Sqrt(fy / E_mod)
 
-        '--------------- formula 7.14---
-        Cxs = lambda_p - 0.22 / lambda_p ^ 2
-
-        '--------------- formula 7.13---
+        '--------------- equation 7.13---
         Se = S * Cxs * Cys
 
         TextBox41.Text = Math.Round(S, 0).ToString
@@ -349,10 +405,12 @@ Public Class Form1
         TextBox44.Text = Math.Round(sigma_Xsd, 0).ToString
         TextBox43.Text = Math.Round(sigma_Ysd, 0).ToString
         TextBox45.Text = Math.Round(fy, 0).ToString
-        TextBox46.Text = Math.Round(Cxs, 0).ToString
-        TextBox47.Text = Math.Round(Cys, 0).ToString
+        TextBox46.Text = Math.Round(Cxs, 2).ToString
+        TextBox47.Text = Math.Round(Cys, 2).ToString
         TextBox48.Text = Math.Round(sigma_Yr, 0).ToString
         TextBox49.Text = Math.Round(Se, 0).ToString
+        TextBox68.Text = Math.Round(Ci, 3).ToString
+        TextBox69.Text = Math.Round(lambda_p, 2).ToString
     End Sub
 
     Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
@@ -371,6 +429,8 @@ Public Class Form1
       vbTab & "Construction steel S355JR" & vbTab & "@ 20c" & vbTab & "335 [N/mm2]" & vbCrLf &
       vbTab & "Stainless steel 304L" & vbTab & vbTab & "@ 20c" & vbTab & "220 [N/mm2]" & vbCrLf &
       vbTab & "Stainless steel 316L" & vbTab & vbTab & "@ 20c" & vbTab & "195 [N/mm2]"
+
+        DNV_chapter6_3()
     End Sub
 
     Private Sub Button4_Click(sender As Object, e As EventArgs) Handles NumericUpDown7.ValueChanged, NumericUpDown19.ValueChanged, NumericUpDown10.ValueChanged, Button4.Click
@@ -390,8 +450,9 @@ Public Class Form1
         DNV_chapter7_3() 'Chapter 7.3
     End Sub
 
-    Private Sub Button8_Click(sender As Object, e As EventArgs) Handles Button8.Click, TabPage4.Enter, NumericUpDown29.ValueChanged, NumericUpDown21.ValueChanged
+    Private Sub Button8_Click(sender As Object, e As EventArgs) Handles Button8.Click, TabPage4.Enter, NumericUpDown29.ValueChanged, NumericUpDown21.ValueChanged, RadioButton3.CheckedChanged
         DNV_chapter6_6() 'Chapter 6.6
+        DNV_chapter6_7() 'Chapter 6.7
     End Sub
 
 
