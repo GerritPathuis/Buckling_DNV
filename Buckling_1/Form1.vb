@@ -412,6 +412,22 @@ Public Class Form1
         TextBox68.Text = Math.Round(Ci, 3).ToString
         TextBox69.Text = Math.Round(lambda_p, 2).ToString
     End Sub
+    Private Sub DNV_chapter7_4()
+        Dim K_sp, tau_sd, tau_rd, sigma_YRd, KspsigmaYrd As Double
+
+        Double.TryParse(TextBox24.Text, sigma_YRd)      'equation 6.5
+        tau_sd = NumericUpDown44.Value
+
+        K_sp = Sqrt(1 - 3 * (tau_sd / fy) ^ 2)          'equation 7.20
+        KspsigmaYrd = K_sp * sigma_YRd                  'equation 7.19
+        tau_rd = fy / ((Sqrt(3) * Ym))                  'equation 7.18
+
+        TextBox70.Text = Math.Round(sigma_YRd, 0).ToString
+        TextBox71.Text = Math.Round(K_sp, 3).ToString
+        TextBox72.Text = Math.Round(tau_sd, 2).ToString
+        TextBox73.Text = Math.Round(tau_rd, 2).ToString
+        TextBox74.Text = Math.Round(KspsigmaYrd, 0).ToString
+    End Sub
 
     Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
         get_material_data()
@@ -448,6 +464,7 @@ Public Class Form1
 
     Private Sub Button7_Click(sender As Object, e As EventArgs) Handles Button7.Click, TabPage9.Enter
         DNV_chapter7_3() 'Chapter 7.3
+        DNV_chapter7_4() 'Chapter 7.4
     End Sub
 
     Private Sub Button8_Click(sender As Object, e As EventArgs) Handles Button8.Click, TabPage4.Enter, NumericUpDown29.ValueChanged, NumericUpDown21.ValueChanged, RadioButton3.CheckedChanged
