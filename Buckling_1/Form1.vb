@@ -6,6 +6,7 @@ Public Class Form1
     Public fy As Double         'Yield stress
     Dim Ym As Double            'Safety factor
     Dim E_mod As Double         'Elasticity [N/mm2]
+    Dim G As Double             'Shear modulus
 
     Private Sub Button6_Click(sender As Object, e As EventArgs) Handles NumericUpDown47.ValueChanged, NumericUpDown46.ValueChanged, NumericUpDown45.ValueChanged, NumericUpDown44.ValueChanged, NumericUpDown43.ValueChanged, NumericUpDown42.ValueChanged, NumericUpDown39.ValueChanged, NumericUpDown36.ValueChanged, Button6.Click
         DNV_chapter5_0()
@@ -457,31 +458,60 @@ Public Class Form1
 
     Private Sub DNV_chapter7_52()
         Dim S, T As Double
-        Dim F_Ept, F_Epy, F_Epx, c, lambda_e As Double
+        Dim F_Ept, F_Epy, F_Epx, c, lambda_e, length As Double
         Dim F_ep, Sigma_JSd, eta, CC, beta, F_ET, Iz As Double
+        Dim hw, tw, lT As Double
+        Dim Af, Aw, ef As Double
 
         S = NumericUpDown14.Value           'Stiffeners distance
         T = NumericUpDown13.Value           'Plate thickness
+        length = NumericUpDown23.Value      'stiffeners length
+        hw = NumericUpDown35.Value          'stiffeners height
+        tw = NumericUpDown37.Value          'stiffeners flange thickness
+        lT = NumericUpDown30.Value          'torsional buckling length
+        G = NumericUpDown41.Value * 10 ^ 9  'Shear modulus
 
-        F_Ept = 999      'equation 7.44
-        F_Epy = 999      'equation 7.43
-        F_Epx = 999      'equation 7.42
-        c = 999             'equation 7.41
+        F_Ept = 5.0 * E_mod * (T / S) ^ 2       'equation 7.44
+        F_Epy = 0.9 * E_mod * (T / S) ^ 2       'equation 7.43
+        F_Epx = 3.62 * E_mod * (T / S) ^ 2      'equation 7.42
+        c = 2 - (S / length)                    'equation 7.41
+
         lambda_e = 999      'equation 7.40
-        F_ep = 99       'equation 7.39
-        Sigma_JSd = 99      'equation 7.38
-        eta = 99      'equation 7.37
-        CC = 99      'equation 7.36
-        beta = 99      'equation 7.35
 
-        F_ET = 99      'equation 7.34
-        Iz = 99      'equation 7.33
+        F_ep = fy / Sqrt(1 + lambda_e ^ -4)     'equation 7.39
+
+        'Sigma_JSd = Math.Sqrt(sigma_Xsd ^ 2 + sigma_Ysd ^ 2 - sigma_Xsd * sigma_Ysd + 3 * tau_sd ^ 2) 'equation 7.38
+
+        eta = Sigma_JSd / F_ep                      'equation 7.37
+        CC = hw / S * (T / tw) ^ 3 * Sqrt(1 - eta)  'equation 7.36
+        beta = (3 * CC + 0.2) / (CC + 0.2)          'equation 7.35
+
+        F_ET = beta + 2 * (hw / lT) ^ 2             'equation 7.34 (Flat bar)
+        F_ET *= G * (tw / hw) ^ 2
+
+        Iz = 1 / 12 * Af * beta ^ 2                 'equation 7.33
+        Iz += ef ^ 2 * Af / (1 + Af / Aw)
+
         F_ET = 99      'equation 7.32
 
         TextBox89.Text = Math.Round(S, 1).ToString
         TextBox90.Text = Math.Round(T, 1).ToString
         TextBox83.Text = Math.Round(T, 1).ToString
+        TextBox96.Text = Math.Round(length, 1).ToString
+        TextBox80.Text = Math.Round(length, 1).ToString
+        TextBox81.Text = Math.Round(length, 1).ToString
+        TextBox82.Text = Math.Round(length, 1).ToString
+        TextBox83.Text = Math.Round(length, 1).ToString
+        TextBox84.Text = Math.Round(length, 1).ToString
+        TextBox91.Text = Math.Round(length, 1).ToString
+        TextBox92.Text = Math.Round(length, 1).ToString
+        TextBox93.Text = Math.Round(length, 1).ToString
+        TextBox94.Text = Math.Round(length, 1).ToString
 
+        TextBox95.Text = Math.Round(length, 1).ToString
+        TextBox96.Text = Math.Round(length, 1).ToString
+        TextBox97.Text = Math.Round(length, 1).ToString
+        TextBox98.Text = Math.Round(length, 1).ToString
     End Sub
 
     Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
