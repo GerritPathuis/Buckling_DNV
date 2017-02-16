@@ -428,9 +428,64 @@ Public Class Form1
         TextBox73.Text = Math.Round(tau_rd, 2).ToString
         TextBox74.Text = Math.Round(KspsigmaYrd, 0).ToString
     End Sub
+    Private Sub DNV_chapter7_51()
+        Dim mu1, mu2, Ie, iee, Ae, fe, lambda, lambdaT, fk_fr As Double
+        Dim Zp, Zt, lk As Double
+
+        Ie = NumericUpDown30.Value
+        Ae = NumericUpDown31.Value
+        Zp = NumericUpDown6.Value
+        Zt = NumericUpDown15.Value
+
+        lk = 99999                                  '(equation 7.74)
+        lambdaT = 99999                             '(equation 7.30)
+
+        mu1 = (0.34 + 0.08 * Zt / iee) * (lambda - 0.2)     'equation 7.26
+        mu2 = (0.34 + 0.08 * Zp / iee) * (lambda - 0.2)     'equation 7.25
+        fe = PI ^ 2 * E_mod * (iee / lk) ^ 2                'equation 7.24
+        lambda = 723                                        'equation 7.23
+        fk_fr = 722                 'equation 7.21/7.22
+
+        iee = Sqrt(Ie / Ae)
+        TextBox87.Text = Math.Round(iee, 2).ToString
+        TextBox76.Text = Math.Round(mu1, 2).ToString
+        TextBox75.Text = Math.Round(mu2, 2).ToString
+        TextBox77.Text = Math.Round(fe, 2).ToString
+        TextBox78.Text = Math.Round(lambda, 2).ToString
+        TextBox79.Text = Math.Round(fk_fr, 2).ToString
+    End Sub
+
+    Private Sub DNV_chapter7_52()
+        Dim S, T As Double
+        Dim F_Ept, F_Epy, F_Epx, c, lambda_e As Double
+        Dim F_ep, Sigma_JSd, eta, CC, beta, F_ET, Iz As Double
+
+        S = NumericUpDown14.Value           'Stiffeners distance
+        T = NumericUpDown13.Value           'Plate thickness
+
+        F_Ept = 999      'equation 7.44
+        F_Epy = 999      'equation 7.43
+        F_Epx = 999      'equation 7.42
+        c = 999             'equation 7.41
+        lambda_e = 999      'equation 7.40
+        F_ep = 99       'equation 7.39
+        Sigma_JSd = 99      'equation 7.38
+        eta = 99      'equation 7.37
+        CC = 99      'equation 7.36
+        beta = 99      'equation 7.35
+
+        F_ET = 99      'equation 7.34
+        Iz = 99      'equation 7.33
+        F_ET = 99      'equation 7.32
+
+        TextBox89.Text = Math.Round(S, 1).ToString
+        TextBox90.Text = Math.Round(T, 1).ToString
+        TextBox83.Text = Math.Round(T, 1).ToString
+
+    End Sub
 
     Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
-        get_material_data()
+        Get_material_data()
 
         TextBox23.Text =
         "Based on " & vbCrLf &
@@ -450,9 +505,9 @@ Public Class Form1
     End Sub
 
     Private Sub Button4_Click(sender As Object, e As EventArgs) Handles NumericUpDown7.ValueChanged, NumericUpDown19.ValueChanged, NumericUpDown10.ValueChanged, Button4.Click
-        get_material_data()
+        Get_material_data()
     End Sub
-    Private Sub get_material_data()
+    Private Sub Get_material_data()
         fy = NumericUpDown19.Value          'Yield stress
         E_mod = NumericUpDown7.Value        'Elasticity [N/mm2]
         Ym = NumericUpDown10.Value          'Safety
@@ -472,5 +527,11 @@ Public Class Form1
         DNV_chapter6_7() 'Chapter 6.7
     End Sub
 
+    Private Sub Button3_Click(sender As Object, e As EventArgs) Handles Button3.Click, TabPage3.Enter, NumericUpDown6.ValueChanged, NumericUpDown31.ValueChanged, NumericUpDown30.ValueChanged, NumericUpDown15.ValueChanged
+        DNV_chapter7_51() 'Chapter 7.5.1
+    End Sub
 
+    Private Sub Button9_Click(sender As Object, e As EventArgs) Handles Button9.Click, TabPage11.Enter
+        DNV_chapter7_52() 'Chapter 7.5.2
+    End Sub
 End Class
