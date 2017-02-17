@@ -460,16 +460,28 @@ Public Class Form1
         Dim S, T As Double
         Dim F_Ept, F_Epy, F_Epx, c, lambda_e, length As Double
         Dim F_ep, Sigma_JSd, eta, CC, beta, F_ET, Iz As Double
-        Dim hw, tw, lT As Double
+        Dim hw, tw, lT, b, tf As Double
         Dim Af, Aw, ef As Double
+        Dim Zp, Zt, hs As Double
+
 
         S = NumericUpDown14.Value           'Stiffeners distance
         T = NumericUpDown13.Value           'Plate thickness
         length = NumericUpDown23.Value      'stiffeners length
+
+        b = NumericUpDown33.Value           'Flange width
+        tf = NumericUpDown40.Value          'Flange thickness
         hw = NumericUpDown35.Value          'stiffeners height
-        tw = NumericUpDown37.Value          'stiffeners flange thickness
-        lT = NumericUpDown30.Value          'torsional buckling length
+        tw = NumericUpDown40.Value          'stiffeners flange thickness
         G = NumericUpDown41.Value * 10 ^ 9  'Shear modulus
+
+        lT = length         'torsional buckling length
+        Zt = 0.6 * hw          '??????????
+        Zp = 0.4 * hw          '??????????
+        hs = hw / 2           '??????????
+
+        ef = b / 2       'Flange eccentricity  nog berekenen
+
 
         F_Ept = 5.0 * E_mod * (T / S) ^ 2       'equation 7.44
         F_Epy = 0.9 * E_mod * (T / S) ^ 2       'equation 7.43
@@ -489,29 +501,42 @@ Public Class Form1
         F_ET = beta + 2 * (hw / lT) ^ 2             'equation 7.34 (Flat bar)
         F_ET *= G * (tw / hw) ^ 2
 
+        Af = hw * tw + b * tf                       'Cross section area flange
+        Aw = b * tf                                 'Cross section area web
+
         Iz = 1 / 12 * Af * beta ^ 2                 'equation 7.33
         Iz += ef ^ 2 * Af / (1 + Af / Aw)
 
-        F_ET = 99      'equation 7.32
+        F_ET = F_ET      'equation 7.32
 
         TextBox89.Text = Math.Round(S, 1).ToString
         TextBox90.Text = Math.Round(T, 1).ToString
         TextBox83.Text = Math.Round(T, 1).ToString
         TextBox96.Text = Math.Round(length, 1).ToString
-        TextBox80.Text = Math.Round(length, 1).ToString
-        TextBox81.Text = Math.Round(length, 1).ToString
-        TextBox82.Text = Math.Round(length, 1).ToString
-        TextBox83.Text = Math.Round(length, 1).ToString
-        TextBox84.Text = Math.Round(length, 1).ToString
-        TextBox91.Text = Math.Round(length, 1).ToString
-        TextBox92.Text = Math.Round(length, 1).ToString
-        TextBox93.Text = Math.Round(length, 1).ToString
-        TextBox94.Text = Math.Round(length, 1).ToString
+        TextBox80.Text = Math.Round(F_Ept, 1).ToString
+        TextBox81.Text = Math.Round(F_Epy, 1).ToString
+        TextBox82.Text = Math.Round(F_Epx, 1).ToString
+        TextBox83.Text = Math.Round(c, 1).ToString
+        TextBox84.Text = Math.Round(lambda_e, 1).ToString
+        TextBox91.Text = Math.Round(F_ep, 1).ToString
+        TextBox92.Text = Math.Round(Sigma_JSd, 1).ToString
+        TextBox93.Text = Math.Round(eta, 1).ToString
+        TextBox94.Text = Math.Round(CC, 1).ToString
 
-        TextBox95.Text = Math.Round(length, 1).ToString
-        TextBox96.Text = Math.Round(length, 1).ToString
-        TextBox97.Text = Math.Round(length, 1).ToString
-        TextBox98.Text = Math.Round(length, 1).ToString
+        TextBox95.Text = Math.Round(beta, 1).ToString
+        TextBox96.Text = Math.Round(F_ET, 1).ToString
+        TextBox97.Text = Math.Round(Iz, 1).ToString
+        TextBox98.Text = Math.Round(F_ET, 1).ToString   '???
+        TextBox99.Text = Math.Round(F_ET, 1).ToString   '???
+
+        TextBox100.Text = Math.Round(Af, 1).ToString
+        TextBox101.Text = Math.Round(Aw, 1).ToString
+        TextBox102.Text = Math.Round(Zt, 1).ToString
+        TextBox103.Text = Math.Round(Zp, 1).ToString
+        TextBox104.Text = Math.Round(lT, 1).ToString
+        TextBox105.Text = Math.Round(hs, 1).ToString
+        TextBox106.Text = Math.Round(ef, 1).ToString
+
     End Sub
 
     Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
@@ -561,7 +586,8 @@ Public Class Form1
         DNV_chapter7_51() 'Chapter 7.5.1
     End Sub
 
-    Private Sub Button9_Click(sender As Object, e As EventArgs) Handles Button9.Click, TabPage11.Enter
+    Private Sub Button9_Click(sender As Object, e As EventArgs) Handles Button9.Click, TabPage11.Enter, NumericUpDown40.ValueChanged, NumericUpDown37.ValueChanged, NumericUpDown35.ValueChanged, NumericUpDown33.ValueChanged
         DNV_chapter7_52() 'Chapter 7.5.2
     End Sub
+
 End Class
