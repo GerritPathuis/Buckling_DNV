@@ -8,7 +8,7 @@ Public Class Form1
     Dim E_mod As Double         'Elasticity [N/mm2]
     Dim G As Double             'Shear modulus
 
-    Private Sub Button6_Click(sender As Object, e As EventArgs) Handles NumericUpDown47.ValueChanged, NumericUpDown46.ValueChanged, NumericUpDown45.ValueChanged, NumericUpDown44.ValueChanged, NumericUpDown43.ValueChanged, NumericUpDown42.ValueChanged, NumericUpDown39.ValueChanged, NumericUpDown36.ValueChanged, Button6.Click
+    Private Sub Button6_Click(sender As Object, e As EventArgs) Handles NumericUpDown47.ValueChanged, NumericUpDown45.ValueChanged, NumericUpDown44.ValueChanged, NumericUpDown43.ValueChanged, NumericUpDown42.ValueChanged, NumericUpDown39.ValueChanged, NumericUpDown36.ValueChanged, Button6.Click
         DNV_chapter5_0()
     End Sub
 
@@ -76,11 +76,8 @@ Public Class Form1
         Dim upsilon_Y As Double
 
         'sd stands for design stress or load
-        Dim Psd As Double
-        Dim sigma_Xsd As Double
-        Dim sigma_Ysd As Double
+        Dim Psd, sigma_Xsd, sigma_Ysd, tau_sd As Double
         Dim sigma_Jsd As Double 'Von Misses
-        Dim tau_sd As Double
         Dim Psd_check As Double
         Dim epsilon As Double
 
@@ -95,23 +92,26 @@ Public Class Form1
 
         'Calc Von misses (equation 5.4)
         sigma_Jsd = Math.Sqrt(sigma_Xsd ^ 2 + sigma_Ysd ^ 2 - sigma_Xsd * sigma_Ysd + 3 * tau_sd ^ 2)
-        NumericUpDown46.Value = sigma_Jsd
 
-        'Calc constant (equation 5.2)
-        upsilon_Y = 1 - (sigma_Jsd / fy) ^ 2
-        upsilon_Y = upsilon_Y / Math.Sqrt(1 - 3 / 4 * (sigma_Xsd / fy) ^ 2) - 3 * (tau_sd / fy) ^ 2
 
         'Calc constant (equation 5.3)
         upsilon_X = 1 - (sigma_Jsd / fy) ^ 2
-        upsilon_X /= Math.Sqrt(1 - 3 / 4 * (sigma_Ysd / fy) ^ 2) - 3 * (tau_sd / fy) ^ 2
+        upsilon_X /= Math.Sqrt(1 - (3 / 4 * (sigma_Ysd / fy) ^ 2)) - 3 * (tau_sd / fy) ^ 2
 
+        'Calc constant (equation 5.2)
+        upsilon_Y = 1 - (sigma_Jsd / fy) ^ 2
+        upsilon_Y /= Math.Sqrt(1 - (3 / 4 * (sigma_Xsd / fy) ^ 2)) - 3 * (tau_sd / fy) ^ 2
 
         'Psd Check (equation 5.1)
-        Psd_check = 4 * fy / Ym * ((t / s) ^ 2) * (upsilon_Y + ((s / length) ^ 2 * upsilon_X))
+        Psd_check = 4 * fy / Ym * ((t / s) ^ 2)
+        Psd_check *= upsilon_Y + ((s / length) ^ 2 * upsilon_X)
 
+        'Results
+        TextBox107.Text = Math.Round(sigma_Jsd, 1).ToString
         TextBox1.Text = Math.Round(upsilon_X, 4).ToString
         TextBox2.Text = Math.Round(upsilon_Y, 4).ToString
         TextBox4.Text = Math.Round(Psd_check, 4).ToString
+
 
         'Checks
         NumericUpDown39.BackColor = IIf(s < length, Color.Yellow, Color.LightCoral)
@@ -459,11 +459,18 @@ Public Class Form1
     Private Sub DNV_chapter7_52()
         Dim S, T As Double
         Dim F_Ept, F_Epy, F_Epx, c, lambda_e, length As Double
-        Dim F_ep, Sigma_JSd, eta, CC, beta, F_ET, Iz As Double
+        Dim F_ep, Sigma_JSd, eta, CC, beta, F_ET, F_ET_flatbar, Iz As Double
         Dim hw, tw, lT, b, tf As Double
         Dim Af, Aw, ef As Double
         Dim Zp, Zt, hs As Double
+        'sd stands for design stress or load
+        Dim Psd, sigma_Xsd, sigma_Ysd, tau_sd As Double
 
+
+        Psd = NumericUpDown45.Value
+        sigma_Xsd = NumericUpDown43.Value
+        sigma_Ysd = NumericUpDown42.Value
+        tau_sd = NumericUpDown44.Value
 
         S = NumericUpDown14.Value           'Stiffeners distance
         T = NumericUpDown13.Value           'Plate thickness
@@ -482,24 +489,29 @@ Public Class Form1
 
         ef = b / 2       'Flange eccentricity  nog berekenen
 
-
         F_Ept = 5.0 * E_mod * (T / S) ^ 2       'equation 7.44
         F_Epy = 0.9 * E_mod * (T / S) ^ 2       'equation 7.43
         F_Epx = 3.62 * E_mod * (T / S) ^ 2      'equation 7.42
         c = 2 - (S / length)                    'equation 7.41
 
-        lambda_e = 999      'equation 7.40
+        lambda_e = (tau_sd / F_Ept) ^ c         'equation 7.40
+        lambda_e += (sigma_Ysd / F_Epy) ^ c
+        lambda_e += (sigma_Xsd / F_Epx) ^ c
+        lambda_e = lambda_e ^ (1 / c)
+        lambda_e = fy / Sigma_JSd
+        lambda_e *= fy / Sigma_JSd
+        lambda_e = lambda_e ^ -0.5
 
         F_ep = fy / Sqrt(1 + lambda_e ^ -4)     'equation 7.39
 
-        'Sigma_JSd = Math.Sqrt(sigma_Xsd ^ 2 + sigma_Ysd ^ 2 - sigma_Xsd * sigma_Ysd + 3 * tau_sd ^ 2) 'equation 7.38
+        Sigma_JSd = Math.Sqrt(sigma_Xsd ^ 2 + sigma_Ysd ^ 2 - sigma_Xsd * sigma_Ysd + 3 * tau_sd ^ 2) 'equation 7.38
 
         eta = Sigma_JSd / F_ep                      'equation 7.37
         CC = hw / S * (T / tw) ^ 3 * Sqrt(1 - eta)  'equation 7.36
         beta = (3 * CC + 0.2) / (CC + 0.2)          'equation 7.35
 
-        F_ET = beta + 2 * (hw / lT) ^ 2             'equation 7.34 (Flat bar)
-        F_ET *= G * (tw / hw) ^ 2
+        F_ET_flatbar = beta + 2 * (hw / lT) ^ 2     'equation 7.34 (Flat bar)
+        F_ET_flatbar *= G * (tw / hw) ^ 2
 
         Af = hw * tw + b * tf                       'Cross section area flange
         Aw = b * tf                                 'Cross section area web
@@ -507,7 +519,8 @@ Public Class Form1
         Iz = 1 / 12 * Af * beta ^ 2                 'equation 7.33
         Iz += ef ^ 2 * Af / (1 + Af / Aw)
 
-        F_ET = F_ET      'equation 7.32
+        F_ET = PI ^ 2 * E_mod * Iz / ((Aw / 3 + Af) * lT ^ 2)    'equation 7.32
+        F_ET += beta * (Aw + (tf / tw) ^ 2 * Af * G * (tw / hw ^ 2) / (Aw + 3 * Af))
 
         TextBox89.Text = Math.Round(S, 1).ToString
         TextBox90.Text = Math.Round(T, 1).ToString
@@ -524,11 +537,9 @@ Public Class Form1
         TextBox94.Text = Math.Round(CC, 1).ToString
 
         TextBox95.Text = Math.Round(beta, 1).ToString
-        TextBox96.Text = Math.Round(F_ET, 1).ToString
-        TextBox97.Text = Math.Round(Iz, 1).ToString
-        TextBox98.Text = Math.Round(F_ET, 1).ToString   '???
+        TextBox97.Text = Math.Round(F_ET_flatbar, 1).ToString
+        TextBox98.Text = Math.Round(Iz, 1).ToString
         TextBox99.Text = Math.Round(F_ET, 1).ToString   '???
-
         TextBox100.Text = Math.Round(Af, 1).ToString
         TextBox101.Text = Math.Round(Aw, 1).ToString
         TextBox102.Text = Math.Round(Zt, 1).ToString
@@ -536,6 +547,12 @@ Public Class Form1
         TextBox104.Text = Math.Round(lT, 1).ToString
         TextBox105.Text = Math.Round(hs, 1).ToString
         TextBox106.Text = Math.Round(ef, 1).ToString
+
+        TextBox108.Text = Math.Round(Psd, 1).ToString
+        TextBox109.Text = Math.Round(sigma_Xsd, 1).ToString
+        TextBox110.Text = Math.Round(sigma_Ysd, 1).ToString
+        TextBox111.Text = Math.Round(tau_sd, 1).ToString
+
 
     End Sub
 
@@ -586,7 +603,7 @@ Public Class Form1
         DNV_chapter7_51() 'Chapter 7.5.1
     End Sub
 
-    Private Sub Button9_Click(sender As Object, e As EventArgs) Handles Button9.Click, TabPage11.Enter, NumericUpDown40.ValueChanged, NumericUpDown37.ValueChanged, NumericUpDown35.ValueChanged, NumericUpDown33.ValueChanged
+    Private Sub Button9_Click(sender As Object, e As EventArgs) Handles Button9.Click, TabPage11.Enter, NumericUpDown40.ValueChanged, NumericUpDown37.ValueChanged, NumericUpDown35.ValueChanged, NumericUpDown33.ValueChanged, RadioButton6.CheckedChanged, RadioButton5.CheckedChanged
         DNV_chapter7_52() 'Chapter 7.5.2
     End Sub
 
