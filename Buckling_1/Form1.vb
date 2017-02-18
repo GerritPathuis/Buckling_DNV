@@ -431,21 +431,38 @@ Public Class Form1
     End Sub
     Private Sub DNV_chapter7_51()
         Dim mu1, mu2, Ie, iee, Ae, fe, lambda, lambdaT, fk_fr As Double
-        Dim Zp, Zt, lk As Double
+        Dim Zp, Zt, lk, fet, psd, length, S As Double
+        Dim pf, W, Wep, Wes As Double
 
         Ie = NumericUpDown30.Value
         Ae = NumericUpDown31.Value
         Zp = NumericUpDown6.Value
         Zt = NumericUpDown15.Value
+        S = NumericUpDown14.Value           'Stiffeners distance
+        psd = NumericUpDown45.Value
+        length = NumericUpDown23.Value      'stiffeners length
 
-        lk = 99999                                  '(equation 7.74)
-        lambdaT = 99999                             '(equation 7.30)
+        Double.TryParse(TextBox97.Text, fet)
+
+        Wep = Ie / Zp
+        Wes = Ie / Zt
+
+        If (Wep < Wes) Then
+            W = Wep
+        Else
+            W = Wes
+        End If
+
+        pf = 12 * Width * fy / (length ^ 2 * S * Ym)        '(equation 7.75)
+
+        lk = length * (1 - 0.5 * Abs(psd / pf))             '(equation 7.74)
+        lambdaT = Sqrt(fy / fet)                            '(equation 7.30)
 
         mu1 = (0.34 + 0.08 * Zt / iee) * (lambda - 0.2)     'equation 7.26
         mu2 = (0.34 + 0.08 * Zp / iee) * (lambda - 0.2)     'equation 7.25
         fe = PI ^ 2 * E_mod * (iee / lk) ^ 2                'equation 7.24
-        lambda = 723                                        'equation 7.23
-        fk_fr = 722                 'equation 7.21/7.22
+        lambda = 9999                                       'equation 7.23
+        fk_fr = 9999                                        'equation 7.21/7.22
 
         iee = Sqrt(Ie / Ae)
         TextBox87.Text = Math.Round(iee, 2).ToString
@@ -459,11 +476,11 @@ Public Class Form1
     Private Sub DNV_chapter7_52()
         Dim S, T As Double
         Dim F_Ept, F_Epy, F_Epx, c, lambda_e, length As Double
-        Dim F_ep, Sigma_JSd, eta, CC, beta, F_ET, F_ET_flatbar, Iz As Double
+        Dim F_ep, Sigma_JSd, eta, CC, beta, F_ET, Iz As Double
         Dim hw, tw, lT, b, tf As Double
         Dim Af, Aw, ef As Double
         Dim Zp, Zt, hs As Double
-        'sd stands for design stress or load
+        ' sd stands for design stress Or load
         Dim Psd, sigma_Xsd, sigma_Ysd, tau_sd As Double
 
 
@@ -487,6 +504,8 @@ Public Class Form1
         Zp = 0.4 * hw          '??????????
         hs = hw / 2           '??????????
 
+        Sigma_JSd = Math.Sqrt(sigma_Xsd ^ 2 + sigma_Ysd ^ 2 - sigma_Xsd * sigma_Ysd + 3 * tau_sd ^ 2) 'equation 7.38
+
         ef = b / 2       'Flange eccentricity  nog berekenen
 
         F_Ept = 5.0 * E_mod * (T / S) ^ 2       'equation 7.44
@@ -504,23 +523,25 @@ Public Class Form1
 
         F_ep = fy / Sqrt(1 + lambda_e ^ -4)     'equation 7.39
 
-        Sigma_JSd = Math.Sqrt(sigma_Xsd ^ 2 + sigma_Ysd ^ 2 - sigma_Xsd * sigma_Ysd + 3 * tau_sd ^ 2) 'equation 7.38
+        eta = Sigma_JSd / F_ep                  'equation 7.37
+        If eta > 1 Then eta = 1
 
-        eta = Sigma_JSd / F_ep                      'equation 7.37
         CC = hw / S * (T / tw) ^ 3 * Sqrt(1 - eta)  'equation 7.36
+
         beta = (3 * CC + 0.2) / (CC + 0.2)          'equation 7.35
 
-        F_ET_flatbar = beta + 2 * (hw / lT) ^ 2     'equation 7.34 (Flat bar)
-        F_ET_flatbar *= G * (tw / hw) ^ 2
+
+        F_ET = beta + 2 * (hw / lT) ^ 2             'equation 7.34 (Flat bar)
+        F_ET *= G * (tw / hw) ^ 2
 
         Af = hw * tw + b * tf                       'Cross section area flange
         Aw = b * tf                                 'Cross section area web
 
-        Iz = 1 / 12 * Af * beta ^ 2                 'equation 7.33
-        Iz += ef ^ 2 * Af / (1 + Af / Aw)
+        'Iz = 1 / 12 * Af * beta ^ 2                 'equation 7.33
+        'Iz += ef ^ 2 * Af / (1 + Af / Aw)
 
-        F_ET = PI ^ 2 * E_mod * Iz / ((Aw / 3 + Af) * lT ^ 2)    'equation 7.32
-        F_ET += beta * (Aw + (tf / tw) ^ 2 * Af * G * (tw / hw ^ 2) / (Aw + 3 * Af))
+        'F_ET = PI ^ 2 * E_mod * Iz / ((Aw / 3 + Af) * lT ^ 2)    'equation 7.32
+        'F_ET += beta * (Aw + (tf / tw) ^ 2 * Af * G * (tw / hw ^ 2) / (Aw + 3 * Af))
 
         TextBox89.Text = Math.Round(S, 1).ToString
         TextBox90.Text = Math.Round(T, 1).ToString
@@ -530,16 +551,16 @@ Public Class Form1
         TextBox81.Text = Math.Round(F_Epy, 1).ToString
         TextBox82.Text = Math.Round(F_Epx, 1).ToString
         TextBox83.Text = Math.Round(c, 1).ToString
-        TextBox84.Text = Math.Round(lambda_e, 1).ToString
+        TextBox84.Text = Math.Round(lambda_e, 4).ToString
         TextBox91.Text = Math.Round(F_ep, 1).ToString
         TextBox92.Text = Math.Round(Sigma_JSd, 1).ToString
         TextBox93.Text = Math.Round(eta, 1).ToString
-        TextBox94.Text = Math.Round(CC, 1).ToString
+        TextBox94.Text = Math.Round(CC, 3).ToString
 
         TextBox95.Text = Math.Round(beta, 1).ToString
-        TextBox97.Text = Math.Round(F_ET_flatbar, 1).ToString
+        TextBox97.Text = Math.Round(F_ET, 1).ToString   '???
         TextBox98.Text = Math.Round(Iz, 1).ToString
-        TextBox99.Text = Math.Round(F_ET, 1).ToString   '???
+
         TextBox100.Text = Math.Round(Af, 1).ToString
         TextBox101.Text = Math.Round(Aw, 1).ToString
         TextBox102.Text = Math.Round(Zt, 1).ToString
@@ -552,8 +573,6 @@ Public Class Form1
         TextBox109.Text = Math.Round(sigma_Xsd, 1).ToString
         TextBox110.Text = Math.Round(sigma_Ysd, 1).ToString
         TextBox111.Text = Math.Round(tau_sd, 1).ToString
-
-
     End Sub
 
     Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
