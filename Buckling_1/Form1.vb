@@ -229,7 +229,6 @@ Public Class Form1
         Psi = 1                             'Stress ratio is 1.0
         sigma_Xsd = NumericUpDown43.Value   'Design stress
 
-
         kappa_sigma = 8.2 / (1.05 + 1)      'equation 6.44
 
         '------------- slenderness calculation--------------------
@@ -429,8 +428,8 @@ Public Class Form1
         TextBox73.Text = Math.Round(tau_rd, 2).ToString
         TextBox74.Text = Math.Round(KspsigmaYrd, 0).ToString
     End Sub
-    Private Sub DNV_chapter7_51()
-        Dim mu1, mu2, Ie, iee, Ae, fe, lambda, lambdaT, fk_fr As Double
+    Private Sub DNV_chapter7_51()  'General
+        Dim mu1, mu2, Ie, iee, Ae, fe, fr, ft, lambda, lambdaT, fk_fr As Double
         Dim Zp, Zt, lk, fet, psd, length, S As Double
         Dim pf, W, Wep, Wes As Double
 
@@ -461,8 +460,27 @@ Public Class Form1
         mu1 = (0.34 + 0.08 * Zt / iee) * (lambda - 0.2)     'equation 7.26
         mu2 = (0.34 + 0.08 * Zp / iee) * (lambda - 0.2)     'equation 7.25
         fe = PI ^ 2 * E_mod * (iee / lk) ^ 2                'equation 7.24
-        lambda = 9999                                       'equation 7.23
-        fk_fr = 9999                                        'equation 7.21/7.22
+        lambda = Sqrt(fr / fe)                              'equation 7.23
+
+        ft = 9999       'equation 7.52
+
+
+
+
+
+        fr = fy
+        fr = fy
+        fr = ft
+
+        If lambda <= 0.2 Then
+            fk_fr = 1                                       'equation 7.21
+        Else
+            fk_fr = 1 + mu1 + lambda ^ 2           'equation 7.22 (opgeleut mu-mu1,mu2 ??)
+            fk_fr -= Sqrt((1 + mu1 + lambda ^ 2) ^ 2 - 4 * lambda ^ 2)
+            fk_fr /= 2 * lambda ^ 2
+        End If
+
+
 
         iee = Sqrt(Ie / Ae)
         TextBox87.Text = Math.Round(iee, 2).ToString
@@ -482,7 +500,7 @@ Public Class Form1
         Dim Zp, Zt, hs As Double
         ' sd stands for design stress Or load
         Dim Psd, sigma_Xsd, sigma_Ysd, tau_sd As Double
-
+        Dim lambdaT, mu, ft As Double
 
         Psd = NumericUpDown45.Value
         sigma_Xsd = NumericUpDown43.Value
@@ -497,7 +515,7 @@ Public Class Form1
         tf = NumericUpDown40.Value          'Flange thickness
         hw = NumericUpDown35.Value          'stiffeners height
         tw = NumericUpDown40.Value          'stiffeners flange thickness
-        G = NumericUpDown41.Value * 10 ^ 9  'Shear modulus
+        Double.TryParse(TextBox114.Text, G) 'Shear modulus
 
         lT = length         'torsional buckling length
         Zt = 0.6 * hw          '??????????
@@ -530,9 +548,23 @@ Public Class Form1
 
         beta = (3 * CC + 0.2) / (CC + 0.2)          'equation 7.35
 
-
+        '--------- For NOW just flat bar-----------------
         F_ET = beta + 2 * (hw / lT) ^ 2             'equation 7.34 (Flat bar)
         F_ET *= G * (tw / hw) ^ 2
+
+        lambdaT = Sqrt(fy / F_ET)                   'equation 7.30
+
+        mu = 0.35 * (lambdaT - 0.6)                 'equation 7.29
+        '---------------------------------------------------
+
+        If lambdaT <= 0.6 Then
+            ft = 1.0 * fy                           'equation 7.27
+        Else
+            ft = 1 + mu + lambdaT ^ 2               'equation 7.28
+            ft -= Sqrt((1 + mu + lambdaT ^ 2) ^ 2 - 4 * lambdaT ^ 2)
+            ft /= 2 * lambdaT ^ 2
+            ft *= fy
+        End If
 
         Af = hw * tw + b * tf                       'Cross section area flange
         Aw = b * tf                                 'Cross section area web
@@ -558,7 +590,7 @@ Public Class Form1
         TextBox94.Text = Math.Round(CC, 3).ToString
 
         TextBox95.Text = Math.Round(beta, 1).ToString
-        TextBox97.Text = Math.Round(F_ET, 1).ToString   '???
+        TextBox97.Text = Math.Round(F_ET, 1).ToString
         TextBox98.Text = Math.Round(Iz, 1).ToString
 
         TextBox100.Text = Math.Round(Af, 1).ToString
@@ -573,6 +605,10 @@ Public Class Form1
         TextBox109.Text = Math.Round(sigma_Xsd, 1).ToString
         TextBox110.Text = Math.Round(sigma_Ysd, 1).ToString
         TextBox111.Text = Math.Round(tau_sd, 1).ToString
+        TextBox112.Text = Math.Round(lambdaT, 1).ToString
+        TextBox113.Text = Math.Round(mu, 1).ToString
+        TextBox99.Text = Math.Round(ft, 1).ToString
+
     End Sub
 
     Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
@@ -599,9 +635,16 @@ Public Class Form1
         Get_material_data()
     End Sub
     Private Sub Get_material_data()
+        Dim pv, G As Double
+
         fy = NumericUpDown19.Value          'Yield stress
         E_mod = NumericUpDown7.Value        'Elasticity [N/mm2]
         Ym = NumericUpDown10.Value          'Safety
+        pv = NumericUpDown17.Value          'Poissons ration
+
+        G = E_mod / (2 * (1 + pv))          'Shear modulus
+
+        TextBox114.Text = Math.Round(G, 0).ToString
     End Sub
 
     Private Sub Button5_Click(sender As Object, e As EventArgs) Handles RadioButton2.CheckedChanged, RadioButton1.CheckedChanged, NumericUpDown3.ValueChanged, NumericUpDown27.ValueChanged, NumericUpDown26.ValueChanged, NumericUpDown22.ValueChanged, NumericUpDown20.VisibleChanged, NumericUpDown20.ValueChanged, NumericUpDown16.ValueChanged, NumericUpDown14.ValueChanged, NumericUpDown13.ValueChanged, GroupBox13.VisibleChanged, Button5.Click, NumericUpDown28.ValueChanged, NumericUpDown25.ValueChanged, NumericUpDown23.ValueChanged
