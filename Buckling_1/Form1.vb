@@ -314,13 +314,12 @@ Public Class Form1
 
         'Moment of inertia stiffener+plate
         Dim I_stif, I_plate As Double
-        Dim Stif_Thick, Stif_Heigh As Double
+        Dim Stif_Heigh As Double
         Dim Wes, mc As Double
 
-        Stif_Thick = NumericUpDown26.Value
-        Stif_Heigh = NumericUpDown27.Value
+        Stif_Heigh = NumericUpDown35.Value
+        Double.TryParse(TextBox115.Text, I_stif)    'Moment of inertia stiffener
 
-        I_stif = Stif_Thick * Stif_Heigh ^ 3 / 3    'Stiffener
         I_plate = S * t ^ 3 / 3                     'Plate
         I_s = I_stif + I_plate
         Wes = I_s / (Stif_Heigh * 0.5)              'section modulud plate at flange tip ?????
@@ -328,7 +327,6 @@ Public Class Form1
         TextBox30.Text = Math.Round(I_stif, 0).ToString
         TextBox31.Text = Math.Round(I_plate, 0).ToString
         TextBox33.Text = Math.Round(I_s, 0).ToString
-
 
         '========== Equivalent lateral load ========== 
         Kc = 2 * (1 + Sqrt(1 + (10.9 * I_s / (t ^ 3 * S))))   'equation 7.12
@@ -433,15 +431,18 @@ Public Class Form1
         Dim Zp, Zt, lk, fet, psd, length, S As Double
         Dim pf, W, Wep, Wes As Double
 
-        Ie = NumericUpDown30.Value
-        Ae = NumericUpDown31.Value
-        Zp = NumericUpDown6.Value
-        Zt = NumericUpDown15.Value
+        Double.TryParse(TextBox115.Text, Ie)
+        Double.TryParse(TextBox103.Text, Zp)
+        Double.TryParse(TextBox102.Text, Zt)
+        Double.TryParse(TextBox116.Text, Ae)
+        Double.TryParse(TextBox87.Text, iee)
+
         S = NumericUpDown14.Value           'Stiffeners distance
         psd = NumericUpDown45.Value
         length = NumericUpDown23.Value      'stiffeners length
 
         Double.TryParse(TextBox97.Text, fet)
+
 
         Wep = Ie / Zp
         Wes = Ie / Zt
@@ -452,43 +453,46 @@ Public Class Form1
             W = Wes
         End If
 
-        pf = 12 * Width * fy / (length ^ 2 * S * Ym)        '(equation 7.75)
-
+        pf = 12 * W * fy / (length ^ 2 * S * Ym)        '(equation 7.75)
         lk = length * (1 - 0.5 * Abs(psd / pf))             '(equation 7.74)
+
         lambdaT = Sqrt(fy / fet)                            '(equation 7.30)
 
-        mu1 = (0.34 + 0.08 * Zt / iee) * (lambda - 0.2)     'equation 7.26
-        mu2 = (0.34 + 0.08 * Zp / iee) * (lambda - 0.2)     'equation 7.25
-        fe = PI ^ 2 * E_mod * (iee / lk) ^ 2                'equation 7.24
+        Double.TryParse(TextBox99.Text, ft)                 'SECTION 7.52
+
+        'fr = fy                 'Plate side  MOET NOG UITGEWERKT WORDEN
+
+        If lambdaT <= 0.6 Then   'Stiffener side
+            fr = fy
+        Else
+            fr = ft
+        End If
         lambda = Sqrt(fr / fe)                              'equation 7.23
 
-        ft = 9999       'equation 7.52
+        If lambda <= 0.2 Then       '========== Lambda <= 0.2======
+            fk_fr = 1                                           'equation 7.21
+        Else                        '========== Lambda > 0.2======
+            mu1 = (0.34 + 0.08 * Zt / iee) * (lambda - 0.2)     'equation 7.26
+            mu2 = (0.34 + 0.08 * Zp / iee) * (lambda - 0.2)     'equation 7.25
+
+            fe = PI ^ 2 * E_mod * (iee / lk) ^ 2                'equation 7.24
 
 
-
-
-
-        fr = fy
-        fr = fy
-        fr = ft
-
-        If lambda <= 0.2 Then
-            fk_fr = 1                                       'equation 7.21
-        Else
-            fk_fr = 1 + mu1 + lambda ^ 2           'equation 7.22 (opgeleut mu-mu1,mu2 ??)
+            fk_fr = 1 + mu1 + lambda ^ 2           'equation 7.22 (opgelet mu-mu1,mu2 ??)
             fk_fr -= Sqrt((1 + mu1 + lambda ^ 2) ^ 2 - 4 * lambda ^ 2)
             fk_fr /= 2 * lambda ^ 2
         End If
 
-
-
-        iee = Sqrt(Ie / Ae)
-        TextBox87.Text = Math.Round(iee, 2).ToString
         TextBox76.Text = Math.Round(mu1, 2).ToString
         TextBox75.Text = Math.Round(mu2, 2).ToString
         TextBox77.Text = Math.Round(fe, 2).ToString
         TextBox78.Text = Math.Round(lambda, 2).ToString
         TextBox79.Text = Math.Round(fk_fr, 2).ToString
+        TextBox85.Text = Math.Round(lambdaT, 2).ToString
+        TextBox86.Text = Math.Round(lk, 2).ToString
+        TextBox88.Text = Math.Round(ft, 2).ToString
+        TextBox119.Text = Math.Round(Zp, 1).ToString
+        TextBox117.Text = Math.Round(Zt, 1).ToString
     End Sub
 
     Private Sub DNV_chapter7_52()
@@ -515,16 +519,16 @@ Public Class Form1
         tf = NumericUpDown40.Value          'Flange thickness
         hw = NumericUpDown35.Value          'stiffeners height
         tw = NumericUpDown40.Value          'stiffeners flange thickness
+
         Double.TryParse(TextBox114.Text, G) 'Shear modulus
+        Double.TryParse(TextBox102.Text, Zt)
+        Double.TryParse(TextBox103.Text, Zp)
+        Double.TryParse(TextBox105.Text, hs)
+        Double.TryParse(TextBox106.Text, ef)
 
         lT = length         'torsional buckling length
-        Zt = 0.6 * hw          '??????????
-        Zp = 0.4 * hw          '??????????
-        hs = hw / 2           '??????????
 
         Sigma_JSd = Math.Sqrt(sigma_Xsd ^ 2 + sigma_Ysd ^ 2 - sigma_Xsd * sigma_Ysd + 3 * tau_sd ^ 2) 'equation 7.38
-
-        ef = b / 2       'Flange eccentricity  nog berekenen
 
         F_Ept = 5.0 * E_mod * (T / S) ^ 2       'equation 7.44
         F_Epy = 0.9 * E_mod * (T / S) ^ 2       'equation 7.43
@@ -592,14 +596,7 @@ Public Class Form1
         TextBox95.Text = Math.Round(beta, 1).ToString
         TextBox97.Text = Math.Round(F_ET, 1).ToString
         TextBox98.Text = Math.Round(Iz, 1).ToString
-
-        TextBox100.Text = Math.Round(Af, 1).ToString
-        TextBox101.Text = Math.Round(Aw, 1).ToString
-        TextBox102.Text = Math.Round(Zt, 1).ToString
-        TextBox103.Text = Math.Round(Zp, 1).ToString
         TextBox104.Text = Math.Round(lT, 1).ToString
-        TextBox105.Text = Math.Round(hs, 1).ToString
-        TextBox106.Text = Math.Round(ef, 1).ToString
 
         TextBox108.Text = Math.Round(Psd, 1).ToString
         TextBox109.Text = Math.Round(sigma_Xsd, 1).ToString
@@ -646,8 +643,60 @@ Public Class Form1
 
         TextBox114.Text = Math.Round(G, 0).ToString
     End Sub
+    Private Sub Stiffener_data()
+        Dim Zp, Zt, hs, ef As Double
+        Dim bf, tf As Double    'Dimensions flange
+        Dim hw, tw As Double    'Dimensions web
+        Dim Ie, Ie1, Ie2, Ae, ie_small_char As Double
+        Dim A1, A2, dY As Double
+        bf = NumericUpDown33.Value           'Flange width
+        tf = NumericUpDown37.Value          'Flange thickness
+        hw = NumericUpDown35.Value          'web height
+        tw = NumericUpDown40.Value          'web thickness
 
-    Private Sub Button5_Click(sender As Object, e As EventArgs) Handles RadioButton2.CheckedChanged, RadioButton1.CheckedChanged, NumericUpDown3.ValueChanged, NumericUpDown27.ValueChanged, NumericUpDown26.ValueChanged, NumericUpDown22.ValueChanged, NumericUpDown20.VisibleChanged, NumericUpDown20.ValueChanged, NumericUpDown16.ValueChanged, NumericUpDown14.ValueChanged, NumericUpDown13.ValueChanged, GroupBox13.VisibleChanged, Button5.Click, NumericUpDown28.ValueChanged, NumericUpDown25.ValueChanged, NumericUpDown23.ValueChanged
+        '----------  Centroid calculation ------------------
+        A1 = bf * tf                     'Cross section area flange
+        A2 = hw * tw                    'Cross section area web
+
+        dY = hw / 2 + tw / 2
+        dY = (dY * A1) / (A1 + A2)
+        TextBox118.Text = Math.Round(dY, 1).ToString
+
+        Zt = hw / 2 + dY
+        Zp = hw / 2 - dY
+
+        hs = hw / 2           '??????????
+        ef = bf / 2
+
+        Ae = A1 + A2        'Effective area
+
+        '---------------- Moment of inertia ----------------
+
+        Ie1 = tw * hw ^ 3 / 3   'Web part
+
+        Ie2 = bf * tf / 12      'Flange part
+        Ie2 += A1 * hw ^ 2      'Flange part verschuiving naar buiten
+
+
+        Ie = Ie1 + Ie2
+
+        ie_small_char = Sqrt(Ie / Ae) 'Effective radius of gyration
+
+
+
+
+        TextBox100.Text = Math.Round(A1, 1).ToString
+        TextBox101.Text = Math.Round(A2, 1).ToString
+        TextBox102.Text = Math.Round(Zt, 1).ToString
+        TextBox103.Text = Math.Round(Zp, 1).ToString
+        TextBox105.Text = Math.Round(hs, 1).ToString
+        TextBox106.Text = Math.Round(ef, 1).ToString
+        TextBox87.Text = Math.Round(ie_small_char, 1).ToString
+        TextBox115.Text = Math.Round(Ie, 0).ToString
+        TextBox116.Text = Math.Round(Ae, 0).ToString
+    End Sub
+
+    Private Sub Button5_Click(sender As Object, e As EventArgs) Handles RadioButton2.CheckedChanged, RadioButton1.CheckedChanged, NumericUpDown3.ValueChanged, NumericUpDown22.ValueChanged, NumericUpDown20.VisibleChanged, NumericUpDown20.ValueChanged, NumericUpDown16.ValueChanged, NumericUpDown14.ValueChanged, NumericUpDown13.ValueChanged, GroupBox13.VisibleChanged, Button5.Click, NumericUpDown28.ValueChanged, NumericUpDown25.ValueChanged, NumericUpDown23.ValueChanged
         DNV_chapter7_2() 'Chapter 7.2
     End Sub
 
@@ -661,12 +710,17 @@ Public Class Form1
         DNV_chapter6_7() 'Chapter 6.7
     End Sub
 
-    Private Sub Button3_Click(sender As Object, e As EventArgs) Handles Button3.Click, TabPage3.Enter, NumericUpDown6.ValueChanged, NumericUpDown31.ValueChanged, NumericUpDown30.ValueChanged, NumericUpDown15.ValueChanged
+    Private Sub Button3_Click(sender As Object, e As EventArgs) Handles Button3.Click, TabPage3.Enter
         DNV_chapter7_51() 'Chapter 7.5.1
     End Sub
 
-    Private Sub Button9_Click(sender As Object, e As EventArgs) Handles Button9.Click, TabPage11.Enter, NumericUpDown40.ValueChanged, NumericUpDown37.ValueChanged, NumericUpDown35.ValueChanged, NumericUpDown33.ValueChanged, RadioButton6.CheckedChanged, RadioButton5.CheckedChanged
+    Private Sub Button9_Click(sender As Object, e As EventArgs) Handles Button9.Click, TabPage11.Enter
         DNV_chapter7_52() 'Chapter 7.5.2
     End Sub
+
+    Private Sub Button10_Click(sender As Object, e As EventArgs) Handles Button10.Click, TabPage12.Enter, NumericUpDown40.ValueChanged, NumericUpDown37.ValueChanged, NumericUpDown35.ValueChanged, NumericUpDown33.ValueChanged
+        Stiffener_data()
+    End Sub
+
 
 End Class
