@@ -585,7 +585,6 @@ Public Class Form1
 
         TextBox89.Text = Math.Round(S, 1).ToString
         TextBox90.Text = Math.Round(T, 1).ToString
-        TextBox83.Text = Math.Round(T, 1).ToString
         TextBox96.Text = Math.Round(length, 1).ToString
         TextBox80.Text = Math.Round(F_Ept, 1).ToString
         TextBox81.Text = Math.Round(F_Epy, 1).ToString
@@ -611,12 +610,61 @@ Public Class Form1
         TextBox99.Text = Math.Round(fT, 1).ToString
 
     End Sub
+    Private Sub DNV_chapter7_6()
+        Dim S, T, length As Double
+        Dim Psd, sigma_Xsd, sigma_Ysd, tau_sd As Double
+        Dim tau_RdY, tau_Rdl, tau_Rds As Double
+        Dim tau_crl, tau_crs As Double
+        Dim Ip, Iss As Double
+
+        Psd = NumericUpDown45.Value
+        sigma_Xsd = NumericUpDown43.Value
+        sigma_Ysd = NumericUpDown42.Value
+        tau_sd = NumericUpDown44.Value
+
+        S = NumericUpDown14.Value           'Stiffeners distance
+        T = NumericUpDown13.Value           'Plate thickness
+        length = NumericUpDown23.Value      'stiffeners length
+
+        '------------ start calculation ----------
+        Ip = T ^ 3 * S / 10.9                    'eq 7.49
+
+        Double.TryParse(TextBox33.Text, Iss)
+        Double.TryParse(TextBox35.Text, tau_crl)  'eq 7.6
+        tau_crs = 36 * E_mod
+        tau_crs /= (S * T * length ^ 2)
+        tau_crs *= (Ip * Iss ^ 3) ^ 0.25          'eq 7.48
+
+        tau_RdY = fy / (Sqrt(3) * Ym)            'equation 7.45
+        tau_Rdl = tau_crl / Ym                   'equation 7.46
+        tau_Rds = tau_crs / Ym                   'equation 7.47
+
+        '------------------ present----------------
+        TextBox140.Text = Math.Round(S, 1).ToString
+        TextBox141.Text = Math.Round(T, 1).ToString
+        TextBox131.Text = Math.Round(length, 1).ToString
+
+        TextBox149.Text = Math.Round(Psd, 0).ToString
+        TextBox148.Text = Math.Round(sigma_Xsd, 1).ToString
+        TextBox147.Text = Math.Round(sigma_Ysd, 1).ToString
+        TextBox146.Text = Math.Round(tau_sd, 1).ToString
+
+        TextBox128.Text = Math.Round(Ip, 0).ToString
+        TextBox129.Text = Math.Round(Iss, 0).ToString
+
+        TextBox120.Text = Math.Round(tau_crs, 0).ToString
+        TextBox142.Text = Math.Round(tau_crl, 0).ToString
+        TextBox143.Text = Math.Round(tau_Rds, 0).ToString
+        TextBox144.Text = Math.Round(tau_Rdl, 0).ToString
+        TextBox136.Text = Math.Round(tau_RdY, 0).ToString
+    End Sub
 
     Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
         Get_material_data()
         Calc_weight_and_loads()
         Stiffener_data()
         DNV_chapter7_52()
+        DNV_chapter7_2()
 
         TextBox23.Text =
         "Based on " & vbCrLf &
@@ -678,12 +726,10 @@ Public Class Form1
         Ae = A1 + A2        'Effective area
 
         '---------------- Moment of inertia ----------------
-
         Ie1 = tw * hw ^ 3 / 3   'Web part
 
         Ie2 = bf * tf / 12      'Flange part
         Ie2 += A1 * hw ^ 2      'Flange part verschuiving naar buiten
-
 
         Ie = Ie1 + Ie2
 
@@ -725,5 +771,10 @@ Public Class Form1
     Private Sub Button10_Click(sender As Object, e As EventArgs) Handles Button10.Click, TabPage12.Enter, NumericUpDown40.ValueChanged, NumericUpDown37.ValueChanged, NumericUpDown35.ValueChanged, NumericUpDown33.ValueChanged
         Stiffener_data()
     End Sub
+
+    Private Sub Button11_Click(sender As Object, e As EventArgs) Handles Button11.Click, TabPage13.Enter
+        DNV_chapter7_6() 'Chapter 7.6
+    End Sub
+
 
 End Class
