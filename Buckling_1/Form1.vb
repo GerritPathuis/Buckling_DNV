@@ -4,9 +4,9 @@ Imports System.Math
 
 Public Class Form1
     Public fy As Double         'Yield stress
-    Dim Ym As Double            'Safety factor
-    Dim E_mod As Double         'Elasticity [N/mm2]
-    Dim G As Double             'Shear modulus
+    Public Ym As Double         'Safety factor
+    Public E_mod As Double      'Elasticity [N/mm2]
+    Public G As Double          'Shear modulus
 
     Private Sub Button6_Click(sender As Object, e As EventArgs) Handles NumericUpDown47.ValueChanged, NumericUpDown45.ValueChanged, NumericUpDown44.ValueChanged, NumericUpDown43.ValueChanged, NumericUpDown42.ValueChanged, NumericUpDown39.ValueChanged, NumericUpDown36.ValueChanged, Button6.Click
         DNV_chapter5_0()
@@ -17,8 +17,10 @@ Public Class Form1
         DNV_chapter6_3()    'Unstiffened plate transverse uniform loading
     End Sub
 
-
     Private Sub Button1_Click(sender As Object, e As EventArgs) Handles TabPage1.Enter, NumericUpDown9.ValueChanged, NumericUpDown5.ValueChanged, NumericUpDown4.ValueChanged, NumericUpDown2.ValueChanged, NumericUpDown1.ValueChanged, Button1.Click
+        Calc_weight_and_loads()
+    End Sub
+    Private Sub Calc_weight_and_loads()
         'Determine the weight and the stress due to weight
         Dim box_l, box_w, box_h, box_thick As Double
         Dim w_roof, w_longpanel, w_shortpanel As Double
@@ -65,7 +67,9 @@ Public Class Form1
         If comp_stress < NumericUpDown43.Maximum And comp_stress > NumericUpDown43.Minimum Then
             NumericUpDown43.Value = Math.Round(comp_stress, 0)
         End If
+
     End Sub
+
     Private Sub DNV_chapter5_0()
         'Çhapter 5, DNV-RP-C201, Oktober 2010 
         Dim t As Double
@@ -427,7 +431,7 @@ Public Class Form1
         TextBox74.Text = Math.Round(KspsigmaYrd, 0).ToString
     End Sub
     Private Sub DNV_chapter7_51()  'General
-        Dim mu1, mu2, Ie, iee, Ae, fe, fr, ft, lambda, lambdaT, fk_fr As Double
+        Dim mu1, mu2, Ie, iee, Ae, fe, fr, fT, lambda, lambdaT, fk_fr As Double
         Dim Zp, Zt, lk, fet, psd, length, S As Double
         Dim pf, W, Wep, Wes As Double
 
@@ -436,46 +440,39 @@ Public Class Form1
         Double.TryParse(TextBox102.Text, Zt)
         Double.TryParse(TextBox116.Text, Ae)
         Double.TryParse(TextBox87.Text, iee)
+        Double.TryParse(TextBox99.Text, fT)     'SECTION 7.52
 
-        S = NumericUpDown14.Value           'Stiffeners distance
+        S = NumericUpDown14.Value               'Stiffeners distance
         psd = NumericUpDown45.Value
-        length = NumericUpDown23.Value      'stiffeners length
+        length = NumericUpDown23.Value          'stiffeners length
 
         Double.TryParse(TextBox97.Text, fet)
 
-
-        Wep = Ie / Zp
+        Wep = Ie / Zp                            '(equation 7.71a)
         Wes = Ie / Zt
+        W = IIf(Wep < Wes, Wep, Wes)
 
-        If (Wep < Wes) Then
-            W = Wep
-        Else
-            W = Wes
-        End If
-
+        ' MessageBox.Show("W=" & W.ToString & ",fy=" & fy.ToString & ",L=" & length.ToString & ",S=" & S.ToString & ",Ym=" & Ym.ToString)
         pf = 12 * W * fy / (length ^ 2 * S * Ym)        '(equation 7.75)
-        lk = length * (1 - 0.5 * Abs(psd / pf))             '(equation 7.74)
+        'lk = length * (1 - 0.5 * Abs(psd / pf))        '(equation 7.74)
+        lk = length                                     'equ 7.75 only for simple supported stiffeners
+
+
 
         lambdaT = Sqrt(fy / fet)                            '(equation 7.30)
-
-        Double.TryParse(TextBox99.Text, ft)                 'SECTION 7.52
-
         'fr = fy                 'Plate side  MOET NOG UITGEWERKT WORDEN
 
-        If lambdaT <= 0.6 Then   'Stiffener side
-            fr = fy
-        Else
-            fr = ft
-        End If
+        fr = IIf(lambdaT <= 0.6, fy, fT)
+        fe = PI ^ 2 * E_mod * (iee / lk) ^ 2                'equation 7.24
         lambda = Sqrt(fr / fe)                              'equation 7.23
 
         If lambda <= 0.2 Then       '========== Lambda <= 0.2======
             fk_fr = 1                                           'equation 7.21
         Else                        '========== Lambda > 0.2======
+
+
             mu1 = (0.34 + 0.08 * Zt / iee) * (lambda - 0.2)     'equation 7.26
             mu2 = (0.34 + 0.08 * Zp / iee) * (lambda - 0.2)     'equation 7.25
-
-            fe = PI ^ 2 * E_mod * (iee / lk) ^ 2                'equation 7.24
 
 
             fk_fr = 1 + mu1 + lambda ^ 2           'equation 7.22 (opgelet mu-mu1,mu2 ??)
@@ -485,14 +482,21 @@ Public Class Form1
 
         TextBox76.Text = Math.Round(mu1, 2).ToString
         TextBox75.Text = Math.Round(mu2, 2).ToString
-        TextBox77.Text = Math.Round(fe, 2).ToString
-        TextBox78.Text = Math.Round(lambda, 2).ToString
+        TextBox77.Text = Math.Round(fe, 0).ToString
+        TextBox78.Text = Math.Round(lambda, 3).ToString
         TextBox79.Text = Math.Round(fk_fr, 2).ToString
         TextBox85.Text = Math.Round(lambdaT, 2).ToString
         TextBox86.Text = Math.Round(lk, 2).ToString
-        TextBox88.Text = Math.Round(ft, 2).ToString
-        TextBox119.Text = Math.Round(Zp, 1).ToString
-        TextBox117.Text = Math.Round(Zt, 1).ToString
+        TextBox88.Text = Math.Round(fT, 2).ToString
+        TextBox119.Text = Math.Round(Zp, 3).ToString
+        TextBox117.Text = Math.Round(Zt, 3).ToString
+        TextBox121.Text = Math.Round(pf, 3).ToString
+        TextBox122.Text = Math.Round(W, 0).ToString
+        TextBox123.Text = Math.Round(Ie, 0).ToString
+        TextBox124.Text = Math.Round(Wes, 0).ToString
+        TextBox125.Text = Math.Round(Wep, 0).ToString
+        TextBox126.Text = Math.Round(length, 0).ToString
+        TextBox127.Text = Math.Round(fr, 0).ToString
     End Sub
 
     Private Sub DNV_chapter7_52()
@@ -504,7 +508,7 @@ Public Class Form1
         Dim Zp, Zt, hs As Double
         ' sd stands for design stress Or load
         Dim Psd, sigma_Xsd, sigma_Ysd, tau_sd As Double
-        Dim lambdaT, mu, ft As Double
+        Dim lambdaT, mu, fT As Double
 
         Psd = NumericUpDown45.Value
         sigma_Xsd = NumericUpDown43.Value
@@ -562,12 +566,12 @@ Public Class Form1
         '---------------------------------------------------
 
         If lambdaT <= 0.6 Then
-            ft = 1.0 * fy                           'equation 7.27
+            fT = 1.0 * fy                           'equation 7.27
         Else
-            ft = 1 + mu + lambdaT ^ 2               'equation 7.28
-            ft -= Sqrt((1 + mu + lambdaT ^ 2) ^ 2 - 4 * lambdaT ^ 2)
-            ft /= 2 * lambdaT ^ 2
-            ft *= fy
+            fT = 1 + mu + lambdaT ^ 2               'equation 7.28
+            fT -= Sqrt((1 + mu + lambdaT ^ 2) ^ 2 - 4 * lambdaT ^ 2)
+            fT /= 2 * lambdaT ^ 2
+            fT *= fy
         End If
 
         Af = hw * tw + b * tf                       'Cross section area flange
@@ -604,12 +608,15 @@ Public Class Form1
         TextBox111.Text = Math.Round(tau_sd, 1).ToString
         TextBox112.Text = Math.Round(lambdaT, 1).ToString
         TextBox113.Text = Math.Round(mu, 1).ToString
-        TextBox99.Text = Math.Round(ft, 1).ToString
+        TextBox99.Text = Math.Round(fT, 1).ToString
 
     End Sub
 
     Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
         Get_material_data()
+        Calc_weight_and_loads()
+        Stiffener_data()
+        DNV_chapter7_52()
 
         TextBox23.Text =
         "Based on " & vbCrLf &
@@ -682,9 +689,6 @@ Public Class Form1
 
         ie_small_char = Sqrt(Ie / Ae) 'Effective radius of gyration
 
-
-
-
         TextBox100.Text = Math.Round(A1, 1).ToString
         TextBox101.Text = Math.Round(A2, 1).ToString
         TextBox102.Text = Math.Round(Zt, 1).ToString
@@ -721,6 +725,5 @@ Public Class Form1
     Private Sub Button10_Click(sender As Object, e As EventArgs) Handles Button10.Click, TabPage12.Enter, NumericUpDown40.ValueChanged, NumericUpDown37.ValueChanged, NumericUpDown35.ValueChanged, NumericUpDown33.ValueChanged
         Stiffener_data()
     End Sub
-
 
 End Class
