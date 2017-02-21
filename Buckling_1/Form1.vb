@@ -7,6 +7,7 @@ Public Class Form1
     Public Ym As Double         'Safety factor
     Public E_mod As Double      'Elasticity [N/mm2]
     Public G As Double          'Shear modulus
+    Public psd As Double        'Lateral load [N/mm2]
 
     Private Sub Button6_Click(sender As Object, e As EventArgs) Handles NumericUpDown47.ValueChanged, NumericUpDown45.ValueChanged, NumericUpDown44.ValueChanged, NumericUpDown43.ValueChanged, NumericUpDown42.ValueChanged, NumericUpDown39.ValueChanged, NumericUpDown36.ValueChanged, Button6.Click
         DNV_chapter5_0()
@@ -80,7 +81,7 @@ Public Class Form1
         Dim upsilon_Y As Double
 
         'sd stands for design stress or load
-        Dim Psd, sigma_Xsd, sigma_Ysd, tau_sd As Double
+        Dim sigma_Xsd, sigma_Ysd, tau_sd As Double
         Dim sigma_Jsd As Double 'Von Misses
         Dim Psd_check As Double
         Dim epsilon As Double
@@ -89,14 +90,14 @@ Public Class Form1
         t = NumericUpDown36.Value           'Plate thickness
         length = NumericUpDown47.Value      'stiffeners length
 
-        Psd = NumericUpDown45.Value / 1000 ^ 2  '[N/mm2]
+
+
         sigma_Xsd = NumericUpDown43.Value
         sigma_Ysd = NumericUpDown42.Value
         tau_sd = NumericUpDown44.Value
 
         'Calc Von misses (equation 5.4)
         sigma_Jsd = Math.Sqrt(sigma_Xsd ^ 2 + sigma_Ysd ^ 2 - sigma_Xsd * sigma_Ysd + 3 * tau_sd ^ 2)
-
 
         'Calc constant (equation 5.3)
         upsilon_X = 1 - (sigma_Jsd / fy) ^ 2
@@ -111,6 +112,7 @@ Public Class Form1
         Psd_check *= upsilon_Y + ((s / length) ^ 2 * upsilon_X)
 
         'Results
+        TextBox130.Text = Math.Round(Psd, 4).ToString
         TextBox107.Text = Math.Round(sigma_Jsd, 1).ToString
         TextBox1.Text = Math.Round(upsilon_X, 4).ToString
         TextBox2.Text = Math.Round(upsilon_Y, 4).ToString
@@ -161,14 +163,13 @@ Public Class Form1
 
     Private Sub DNV_chapter6_3()
         '============ Transverse uniform compression chapter 6.3 ===========
-        Dim t, S, psd, sigma_Ysd As Double
+        Dim t, S, sigma_Ysd As Double
         Dim length As Double
 
         sigma_Ysd = NumericUpDown43.Value   'Design stress
         S = NumericUpDown12.Value           'Stiffeners distance
         t = NumericUpDown11.Value           'Plate thickness
         length = NumericUpDown8.Value      'stiffeners length
-        psd = NumericUpDown24.Value / 1000 ^ 2  '[N/mm2]
 
         '============ Transverserse uniform compression chapter 6.3===========
         Dim lambda_C, kappa, mu As Double
@@ -220,6 +221,7 @@ Public Class Form1
 
         TextBox24.Text = Math.Round(sigma_YRd, 0).ToString  '6.5
         TextBox64.Text = Math.Round(sigma_Ysd, 0).ToString
+        TextBox132.Text = Math.Round(psd, 0).ToString
 
         '---------------- Check stress------------------
         TextBox16.BackColor = IIf(sigma_YRd >= sigma_Ysd, Color.LightGreen, Color.Red)
@@ -303,14 +305,14 @@ Public Class Form1
         Dim t, S, sigma_Xsd, sigma_Y1sd, N_Sd, A_s As Double
         Dim tau_tf, tau_crl, tau_crg As Double
         Dim length, LG, psi, I_s As Double
-        Dim q_sd, psd, p_0, C0, Kc As Double
+        Dim q_sd, p_0, C0, Kc As Double
         Dim K_l, k_g As Double
 
         S = NumericUpDown14.Value           'Stiffeners distance
         t = NumericUpDown13.Value           'Plate thickness
         length = NumericUpDown23.Value      'stiffeners length
         LG = NumericUpDown28.Value          'Girder length
-        psd = NumericUpDown22.Value / 1000 ^ 2  '[N/mm2]
+
         sigma_Xsd = NumericUpDown16.Value   'design stress axial stress in plate and stiffener
         sigma_Y1sd = NumericUpDown25.Value  'design stress transverse direction
         tau_tf = NumericUpDown20.Value      'shear sress in plate and stiffener
@@ -371,6 +373,7 @@ Public Class Form1
         TextBox36.Text = Math.Round(K_l, 2).ToString
         TextBox37.Text = Math.Round(k_g, 2).ToString
         TextBox38.Text = Math.Round(tau_crg, 0).ToString
+        TextBox133.Text = Math.Round(psd, 4).ToString
     End Sub
     Private Sub DNV_chapter7_3()
         Dim t, S, sigma_Xsd, sigma_Ysd, sigma_Yr As Double
@@ -432,7 +435,7 @@ Public Class Form1
     End Sub
     Private Sub DNV_chapter7_51()  'General
         Dim mu1, mu2, Ie, iee, Ae, fe, fr, fT, lambda, lambdaT, fk_fr As Double
-        Dim Zp, Zt, lk, fet, psd, length, S As Double
+        Dim Zp, Zt, lk, fet, length, S As Double
         Dim pf, W, Wep, Wes As Double
 
         Double.TryParse(TextBox115.Text, Ie)
@@ -443,7 +446,6 @@ Public Class Form1
         Double.TryParse(TextBox99.Text, fT)     'SECTION 7.52
 
         S = NumericUpDown14.Value               'Stiffeners distance
-        psd = NumericUpDown45.Value
         length = NumericUpDown23.Value          'stiffeners length
 
         Double.TryParse(TextBox97.Text, fet)
@@ -455,9 +457,7 @@ Public Class Form1
         ' MessageBox.Show("W=" & W.ToString & ",fy=" & fy.ToString & ",L=" & length.ToString & ",S=" & S.ToString & ",Ym=" & Ym.ToString)
         pf = 12 * W * fy / (length ^ 2 * S * Ym)        '(equation 7.75)
         'lk = length * (1 - 0.5 * Abs(psd / pf))        '(equation 7.74)
-        lk = length                                     'equ 7.75 only for simple supported stiffeners
-
-
+        lk = length                                     'equ 7.75 only for simple supported stiffeners DNV_chapter7_51
 
         lambdaT = Sqrt(fy / fet)                            '(equation 7.30)
         'fr = fy                 'Plate side  MOET NOG UITGEWERKT WORDEN
@@ -497,6 +497,10 @@ Public Class Form1
         TextBox125.Text = Math.Round(Wep, 0).ToString
         TextBox126.Text = Math.Round(length, 0).ToString
         TextBox127.Text = Math.Round(fr, 0).ToString
+
+        If lambda <= 0.6 Then Label305.Text = "Note: this is a Slender structure"
+        If lambda > 0.6 And lambda < 1.4 Then Label305.Text = "Note: this is Moderate slender structure"
+        If lambda >= 1.4 Then Label305.Text = "Note: this is a Stocky structure"
     End Sub
 
     Private Sub DNV_chapter7_52()
@@ -507,10 +511,9 @@ Public Class Form1
         Dim Af, Aw, ef As Double
         Dim Zp, Zt, hs As Double
         ' sd stands for design stress Or load
-        Dim Psd, sigma_Xsd, sigma_Ysd, tau_sd As Double
+        Dim sigma_Xsd, sigma_Ysd, tau_sd As Double
         Dim lambdaT, mu, fT As Double
 
-        Psd = NumericUpDown45.Value
         sigma_Xsd = NumericUpDown43.Value
         sigma_Ysd = NumericUpDown42.Value
         tau_sd = NumericUpDown44.Value
@@ -601,23 +604,21 @@ Public Class Form1
         TextBox98.Text = Math.Round(Iz, 1).ToString
         TextBox104.Text = Math.Round(lT, 1).ToString
 
-        TextBox108.Text = Math.Round(Psd, 1).ToString
+        TextBox108.Text = Math.Round(psd, 4).ToString
         TextBox109.Text = Math.Round(sigma_Xsd, 1).ToString
         TextBox110.Text = Math.Round(sigma_Ysd, 1).ToString
         TextBox111.Text = Math.Round(tau_sd, 1).ToString
         TextBox112.Text = Math.Round(lambdaT, 1).ToString
         TextBox113.Text = Math.Round(mu, 1).ToString
         TextBox99.Text = Math.Round(fT, 1).ToString
-
     End Sub
     Private Sub DNV_chapter7_6()
         Dim S, T, length As Double
-        Dim Psd, sigma_Xsd, sigma_Ysd, tau_sd As Double
+        Dim sigma_Xsd, sigma_Ysd, tau_sd As Double
         Dim tau_RdY, tau_Rdl, tau_Rds As Double
         Dim tau_crl, tau_crs As Double
         Dim Ip, Iss As Double
 
-        Psd = NumericUpDown45.Value
         sigma_Xsd = NumericUpDown43.Value
         sigma_Ysd = NumericUpDown42.Value
         tau_sd = NumericUpDown44.Value
@@ -644,7 +645,7 @@ Public Class Form1
         TextBox141.Text = Math.Round(T, 1).ToString
         TextBox131.Text = Math.Round(length, 1).ToString
 
-        TextBox149.Text = Math.Round(Psd, 0).ToString
+        TextBox149.Text = Math.Round(psd, 4).ToString
         TextBox148.Text = Math.Round(sigma_Xsd, 1).ToString
         TextBox147.Text = Math.Round(sigma_Ysd, 1).ToString
         TextBox146.Text = Math.Round(tau_sd, 1).ToString
@@ -658,7 +659,25 @@ Public Class Form1
         TextBox144.Text = Math.Round(tau_Rdl, 0).ToString
         TextBox136.Text = Math.Round(tau_RdY, 0).ToString
     End Sub
+    Private Sub DNV_chapter7_71()
+        Dim u As Double
+        Dim tau_sd, tau_Rd As Double
 
+        tau_sd = 999
+        tau_Rd = 888
+
+        u = tau_sd / tau_Rd                   'equation 7.58
+
+        TextBox134.Text = Math.Round(u, 0).ToString
+        TextBox135.Text = Math.Round(u, 0).ToString
+        TextBox137.Text = Math.Round(u, 0).ToString
+        TextBox138.Text = Math.Round(u, 0).ToString
+        TextBox158.Text = Math.Round(u, 0).ToString
+        TextBox159.Text = Math.Round(u, 0).ToString
+        TextBox160.Text = Math.Round(u, 0).ToString
+        TextBox161.Text = Math.Round(u, 0).ToString
+
+    End Sub
     Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
         Get_material_data()
         Calc_weight_and_loads()
@@ -678,8 +697,8 @@ Public Class Form1
       vbTab & "Construction steel S235JR" & vbTab & "@ 20c" & vbTab & "235 [N/mm2]" & vbCrLf &
       vbTab & "Construction steel S355JR" & vbTab & "@ 20c" & vbTab & "335 [N/mm2]" & vbCrLf &
       vbTab & "Stainless steel 304L" & vbTab & vbTab & "@ 20c" & vbTab & "220 [N/mm2]" & vbCrLf &
-      vbTab & "Stainless steel 316L" & vbTab & vbTab & "@ 20c" & vbTab & "195 [N/mm2]"
-
+      vbTab & "Stainless steel 316L" & vbTab & vbTab & "@ 20c" & vbTab & "195 [N/mm2]" & vbCrLf &
+       vbTab & "Stainless steel 316L" & vbTab & vbTab & "@ 200c" & vbTab & "152 [N/mm2]"
         DNV_chapter6_3()
     End Sub
 
@@ -695,6 +714,7 @@ Public Class Form1
         pv = NumericUpDown17.Value          'Poissons ration
 
         G = E_mod / (2 * (1 + pv))          'Shear modulus
+        psd = NumericUpDown45.Value / 1000 ^ 2  '[N/mm2]
 
         TextBox114.Text = Math.Round(G, 0).ToString
     End Sub
@@ -746,7 +766,7 @@ Public Class Form1
         TextBox116.Text = Math.Round(Ae, 0).ToString
     End Sub
 
-    Private Sub Button5_Click(sender As Object, e As EventArgs) Handles RadioButton2.CheckedChanged, RadioButton1.CheckedChanged, NumericUpDown3.ValueChanged, NumericUpDown22.ValueChanged, NumericUpDown20.VisibleChanged, NumericUpDown20.ValueChanged, NumericUpDown16.ValueChanged, NumericUpDown14.ValueChanged, NumericUpDown13.ValueChanged, GroupBox13.VisibleChanged, Button5.Click, NumericUpDown28.ValueChanged, NumericUpDown25.ValueChanged, NumericUpDown23.ValueChanged
+    Private Sub Button5_Click(sender As Object, e As EventArgs) Handles RadioButton2.CheckedChanged, RadioButton1.CheckedChanged, NumericUpDown3.ValueChanged, NumericUpDown20.VisibleChanged, NumericUpDown20.ValueChanged, NumericUpDown16.ValueChanged, NumericUpDown14.ValueChanged, NumericUpDown13.ValueChanged, GroupBox13.VisibleChanged, Button5.Click, NumericUpDown28.ValueChanged, NumericUpDown25.ValueChanged, NumericUpDown23.ValueChanged
         DNV_chapter7_2() 'Chapter 7.2
     End Sub
 
@@ -776,5 +796,23 @@ Public Class Form1
         DNV_chapter7_6() 'Chapter 7.6
     End Sub
 
+    Private Sub Button12_Click(sender As Object, e As EventArgs) Handles Button12.Click, TabPage14.Enter
+        DNV_chapter7_71() 'Chapter 7.7.1
+    End Sub
 
+    Private Sub TextBox161_TextChanged(sender As Object, e As EventArgs) Handles TextBox161.TextChanged
+
+    End Sub
+
+    Private Sub TextBox160_TextChanged(sender As Object, e As EventArgs) Handles TextBox160.TextChanged
+
+    End Sub
+
+    Private Sub TextBox158_TextChanged(sender As Object, e As EventArgs) Handles TextBox158.TextChanged
+
+    End Sub
+
+    Private Sub TextBox159_TextChanged(sender As Object, e As EventArgs) Handles TextBox159.TextChanged
+
+    End Sub
 End Class
