@@ -12,14 +12,7 @@ Public Class Form1
     Public _s As Double         'Stiffeners distance
     Public _l As Double         'stiffeners length
 
-    Private Sub Button6_Click(sender As Object, e As EventArgs) Handles NumericUpDown47.ValueChanged, NumericUpDown45.ValueChanged, NumericUpDown44.ValueChanged, NumericUpDown43.ValueChanged, NumericUpDown42.ValueChanged, NumericUpDown39.ValueChanged, NumericUpDown36.ValueChanged, Button6.Click
-        DNV_chapter5_0()
-    End Sub
 
-    Private Sub Button2_Click(sender As Object, e As EventArgs) Handles TabPage2.Enter, Button2.Click
-        DNV_chapter6_2()    'Unstiffened plate longitudinal uniform loading
-        DNV_chapter6_3()    'Unstiffened plate transverse uniform loading
-    End Sub
 
     Private Sub Button1_Click(sender As Object, e As EventArgs) Handles TabPage1.Enter, NumericUpDown9.ValueChanged, NumericUpDown5.ValueChanged, NumericUpDown4.ValueChanged, NumericUpDown2.ValueChanged, NumericUpDown1.ValueChanged, Button1.Click
         Calc_weight_and_loads()
@@ -287,7 +280,7 @@ Public Class Form1
         '============ Forces in the idealised stiffener plate chapter 7.2 ===========
         Dim sigma_Xsd, sigma_Y1sd, N_Sd, A_s As Double
         Dim tau_tf, tau_crl, tau_crg As Double
-        Dim _l, LG, psi, I_s As Double
+        Dim LG, psi, I_s As Double
         Dim q_sd, p_0, C0, Kc As Double
         Dim K_l, k_g As Double
 
@@ -296,7 +289,7 @@ Public Class Form1
         sigma_Xsd = NumericUpDown16.Value   'design stress axial stress in plate and stiffener
         sigma_Y1sd = NumericUpDown25.Value  'design stress transverse direction
         tau_tf = NumericUpDown20.Value      'shear sress in plate and stiffener
-        A_s = NumericUpDown3.Value          'Area cross sectional stiffener
+        Double.TryParse(TextBox116.Text, A_s) 'Area cross sectional stiffener
 
         'Moment of inertia stiffener+plate
         Dim I_stif, I_plate As Double
@@ -358,6 +351,7 @@ Public Class Form1
         TextBox181.Text = Math.Round(_s, 0).ToString
         TextBox182.Text = Math.Round(_t, 0).ToString
         TextBox183.Text = Math.Round(_l, 0).ToString
+        TextBox184.Text = Math.Round(A_s, 0).ToString
     End Sub
     Private Sub DNV_chapter7_3()
         Dim sigma_Xsd, sigma_Ysd, sigma_Yr As Double
@@ -598,17 +592,17 @@ Public Class Form1
         tau_sd = NumericUpDown44.Value
 
         '------------ start calculation ----------
-        Ip = _t ^ 3 * _s / 10.9                    'eq 7.49
+        Ip = _t ^ 3 * _s / 10.9                     'eq 7.49
 
         Double.TryParse(TextBox33.Text, Iss)
-        Double.TryParse(TextBox35.Text, tau_crl)  'eq 7.6
+        Double.TryParse(TextBox35.Text, tau_crl)    'eq 7.6
         tau_crs = 36 * E_mod
         tau_crs /= (_s * _t * _l ^ 2)
-        tau_crs *= (Ip * Iss ^ 3) ^ 0.25          'eq 7.48
+        tau_crs *= (Ip * Iss ^ 3) ^ 0.25            'eq 7.48
 
-        tau_RdY = fy / (Sqrt(3) * Ym)            'equation 7.45
-        tau_Rdl = tau_crl / Ym                   'equation 7.46
-        tau_Rds = tau_crs / Ym                   'equation 7.47
+        tau_RdY = fy / (Sqrt(3) * Ym)               'eq 7.45
+        tau_Rdl = tau_crl / Ym                      'eq 7.46
+        tau_Rds = tau_crs / Ym                      'eq 7.47
 
         '------------------ present----------------
         TextBox140.Text = Math.Round(_s, 1).ToString
@@ -673,11 +667,7 @@ Public Class Form1
     End Sub
 
     Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
-        Get_material_data()
-        Calc_weight_and_loads()
-        Stiffener_data()
-        DNV_chapter7_52()
-        DNV_chapter7_2()
+        Calc_sequence()
 
         TextBox23.Text =
         "Based on " & vbCrLf &
@@ -764,41 +754,67 @@ Public Class Form1
         TextBox116.Text = Math.Round(Ae, 0).ToString
     End Sub
 
-    Private Sub Button5_Click(sender As Object, e As EventArgs) Handles RadioButton2.CheckedChanged, RadioButton1.CheckedChanged, NumericUpDown3.ValueChanged, NumericUpDown20.VisibleChanged, NumericUpDown20.ValueChanged, NumericUpDown16.ValueChanged, GroupBox13.VisibleChanged, Button5.Click, NumericUpDown28.ValueChanged, NumericUpDown25.ValueChanged
-        DNV_chapter7_2() 'Chapter 7.2
+    Private Sub Button5_Click(sender As Object, e As EventArgs) Handles RadioButton2.CheckedChanged, RadioButton1.CheckedChanged, NumericUpDown20.VisibleChanged, NumericUpDown20.ValueChanged, NumericUpDown16.ValueChanged, GroupBox13.VisibleChanged, Button5.Click, NumericUpDown28.ValueChanged, NumericUpDown25.ValueChanged
+        Calc_sequence()
     End Sub
 
     Private Sub Button7_Click(sender As Object, e As EventArgs) Handles Button7.Click, TabPage9.Enter
-        DNV_chapter7_3() 'Chapter 7.3
-        DNV_chapter7_4() 'Chapter 7.4
+        Calc_sequence()
     End Sub
 
     Private Sub Button8_Click(sender As Object, e As EventArgs) Handles Button8.Click, TabPage4.Enter, RadioButton3.CheckedChanged
-        DNV_chapter6_6() 'Chapter 6.6
-        DNV_chapter6_7() 'Chapter 6.7
+        Calc_sequence()
     End Sub
 
     Private Sub Button3_Click(sender As Object, e As EventArgs) Handles Button3.Click, TabPage3.Enter
-        DNV_chapter7_51() 'Chapter 7.5.1
+        Calc_sequence()
     End Sub
 
     Private Sub Button9_Click(sender As Object, e As EventArgs) Handles Button9.Click, TabPage11.Enter
-        DNV_chapter7_52() 'Chapter 7.5.2
+        Calc_sequence()
     End Sub
 
     Private Sub Button10_Click(sender As Object, e As EventArgs) Handles Button10.Click, TabPage12.Enter, NumericUpDown40.ValueChanged, NumericUpDown37.ValueChanged, NumericUpDown35.ValueChanged, NumericUpDown33.ValueChanged
-        Stiffener_data()
+        Calc_sequence()
     End Sub
 
     Private Sub Button11_Click(sender As Object, e As EventArgs) Handles Button11.Click, TabPage13.Enter
-        DNV_chapter7_6() 'Chapter 7.6
+        Calc_sequence()
     End Sub
 
     Private Sub Button12_Click(sender As Object, e As EventArgs) Handles Button12.Click, TabPage14.Enter
-        DNV_chapter7_71() 'Chapter 7.7.1
+        Calc_sequence()
     End Sub
 
     Private Sub Button13_Click(sender As Object, e As EventArgs) Handles Button13.Click, TabPage15.Click
+        Calc_sequence()
+    End Sub
+    Private Sub Button6_Click(sender As Object, e As EventArgs) Handles NumericUpDown47.ValueChanged, NumericUpDown45.ValueChanged, NumericUpDown44.ValueChanged, NumericUpDown43.ValueChanged, NumericUpDown42.ValueChanged, NumericUpDown39.ValueChanged, NumericUpDown36.ValueChanged, Button6.Click
+        Calc_sequence()
+    End Sub
+
+    Private Sub Button2_Click(sender As Object, e As EventArgs) Handles TabPage2.Enter, Button2.Click
+        Calc_sequence()
+    End Sub
+
+
+    Private Sub Calc_sequence()
+        Get_material_data()
+        Calc_weight_and_loads()
+        Stiffener_data()
+        DNV_chapter5_0()
+        DNV_chapter7_52()
+        DNV_chapter6_2()    'Unstiffened plate longitudinal uniform loading
+        DNV_chapter6_3()    'Unstiffened plate transverse uniform loading
+        DNV_chapter6_6() 'Chapter 6.6
+        DNV_chapter6_7() 'Chapter 6.7
+        DNV_chapter7_2() 'Chapter 7.2
+        DNV_chapter7_3() 'Chapter 7.3
+        DNV_chapter7_4() 'Chapter 7.4
+        DNV_chapter7_6() 'Chapter 7.6
+        DNV_chapter7_51() 'Chapter 7.5.1
+        DNV_chapter7_52() 'Chapter 7.5.2
+        DNV_chapter7_71() 'Chapter 7.7.1
         DNV_chapter7_73() 'Chapter 7.7.3
     End Sub
 End Class
