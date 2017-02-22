@@ -11,12 +11,11 @@ Public Class Form1
     Public _t As Double         'Plate thickness
     Public _s As Double         'Stiffeners distance
     Public _l As Double         'stiffeners length
+    Public _gl As Double        'girder length
 
 
 
-    Private Sub Button1_Click(sender As Object, e As EventArgs) Handles TabPage1.Enter, NumericUpDown9.ValueChanged, NumericUpDown5.ValueChanged, NumericUpDown4.ValueChanged, NumericUpDown2.ValueChanged, NumericUpDown1.ValueChanged, Button1.Click
-        Calc_weight_and_loads()
-    End Sub
+
     Private Sub Calc_weight_and_loads()
         'Determine the weight and the stress due to weight
         Dim box_l, box_w, box_h, box_thick As Double
@@ -30,7 +29,7 @@ Public Class Form1
         box_l = NumericUpDown4.Value        'Length
         box_w = NumericUpDown5.Value        'Width
         box_h = NumericUpDown1.Value        'Height
-        box_thick = NumericUpDown36.Value   'Wall thickness
+        box_thick = NumericUpDown11.Value   'Wall thickness
         wght_fact = NumericUpDown9.Value    'Stiff+girder+expl_doors+insu
         wght_explo = NumericUpDown2.Value   'Explosion doors on roof
 
@@ -50,7 +49,6 @@ Public Class Form1
         total_wall_area = (box_l + box_w) * 2 * box_thick           '[mm2]
         comp_stress = total_wght_on_walls * 9.81 / total_wall_area  '[N/mm2]
 
-        TextBox5.Text = Math.Round(box_thick, 0).ToString
         TextBox6.Text = Math.Round(w_roof, 0).ToString
         TextBox7.Text = Math.Round(w_longpanel, 0).ToString
         TextBox8.Text = Math.Round(w_shortpanel, 0).ToString
@@ -61,9 +59,9 @@ Public Class Form1
         TextBox14.Text = Math.Round(total_wght_on_walls, 0).ToString
 
         'Transfer result to next tab
-        If comp_stress < NumericUpDown43.Maximum And comp_stress > NumericUpDown43.Minimum Then
-            NumericUpDown43.Value = Math.Round(comp_stress, 0)
-        End If
+        '  If comp_stress < NumericUpDown43.Maximum And comp_stress > NumericUpDown43.Minimum Then
+        'NumericUpDown43.Value = Math.Round(comp_stress, 0)
+        ' End If
 
     End Sub
 
@@ -103,11 +101,12 @@ Public Class Form1
         TextBox1.Text = Math.Round(upsilon_X, 4).ToString
         TextBox2.Text = Math.Round(upsilon_Y, 4).ToString
         TextBox4.Text = Math.Round(Psd_check, 4).ToString
-
+        TextBox185.Text = Math.Round(_s, 0).ToString
+        TextBox186.Text = Math.Round(_l, 0).ToString
+        TextBox187.Text = Math.Round(_t, 0).ToString
 
         'Checks
-        NumericUpDown39.BackColor = IIf(_s < _l, Color.Yellow, Color.LightCoral)
-        NumericUpDown47.BackColor = IIf(_s < _l, Color.Yellow, Color.LightCoral)
+
 
         If Psd < Psd_check Then
             TextBox4.BackColor = Color.LightGreen
@@ -142,12 +141,15 @@ Public Class Form1
         TextBox169.Text = Math.Round(_s, 0).ToString
         TextBox177.Text = Math.Round(_l, 0).ToString
         TextBox178.Text = Math.Round(_t, 0).ToString
+
+        '---------------- Check stress------------------
+        TextBox16.BackColor = IIf(sigma_Xrd >= sigma_Xsd, Color.LightGreen, Color.Red)
     End Sub
 
     Private Sub DNV_chapter6_3()
         '============ Transverse uniform compression chapter 6.3 ===========
         Dim sigma_Ysd As Double
-        sigma_Ysd = NumericUpDown43.Value   'Design stress
+        sigma_Ysd = NumericUpDown42.Value   'Design stress
 
         '============ Transverserse uniform compression chapter 6.3===========
         Dim lambda_C, kappa, mu As Double
@@ -202,7 +204,7 @@ Public Class Form1
         TextBox132.Text = Math.Round(psd, 0).ToString
 
         '---------------- Check stress------------------
-        TextBox16.BackColor = IIf(sigma_YRd >= sigma_Ysd, Color.LightGreen, Color.Red)
+        TextBox24.BackColor = IIf(sigma_YRd >= sigma_Ysd, Color.LightGreen, Color.Red)
     End Sub
 
     Private Sub DNV_chapter6_6()
@@ -235,7 +237,7 @@ Public Class Form1
         TextBox179.Text = Math.Round(_s, 2).ToString
         TextBox180.Text = Math.Round(_t, 2).ToString
         '---------------- Check stress------------------
-        TextBox24.BackColor = IIf(sigma_xRd >= sigma_Xsd, Color.LightGreen, Color.Red)
+        TextBox53.BackColor = IIf(sigma_xRd >= sigma_Xsd, Color.LightGreen, Color.Red)
     End Sub
     Private Sub DNV_chapter6_7()
         Dim sigma_Xsd, sigma_xRd, kappa_sigma, upsilon, lambda_P, Psi, cx As Double
@@ -280,11 +282,11 @@ Public Class Form1
         '============ Forces in the idealised stiffener plate chapter 7.2 ===========
         Dim sigma_Xsd, sigma_Y1sd, N_Sd, A_s As Double
         Dim tau_tf, tau_crl, tau_crg As Double
-        Dim LG, psi, I_s As Double
+        Dim psi, I_s As Double
         Dim q_sd, p_0, C0, Kc As Double
         Dim K_l, k_g As Double
 
-        LG = NumericUpDown28.Value          'Girder length
+
 
         sigma_Xsd = NumericUpDown16.Value   'design stress axial stress in plate and stiffener
         sigma_Y1sd = NumericUpDown25.Value  'design stress transverse direction
@@ -326,10 +328,10 @@ Public Class Form1
             K_l = 5.34 * (_t / _s) ^ 2 + 4
         End If
         tau_crl = K_l * 0.904 * E_mod * (_t / _s) ^ 2       'equation 7.6
-        If _l <= LG Then
-            k_g = 5.34 + 4 * (_l / LG) ^ 2                  'equation 7.5
+        If _l <= _gl Then
+            k_g = 5.34 + 4 * (_l / _gl) ^ 2                  'equation 7.5
         Else
-            k_g = 5.34 * (_l / LG) ^ 2 + 4
+            k_g = 5.34 * (_l / _gl) ^ 2 + 4
         End If
         tau_crg = k_g * 0.904 * E_mod * (_t / _l) ^ 2       'equation 7.4
 
@@ -428,36 +430,33 @@ Public Class Form1
         W = IIf(Wep < Wes, Wep, Wes)
 
         ' MessageBox.Show("W=" & W.ToString & ",fy=" & fy.ToString & ",L=" & _l.ToString & ",S=" & _S.ToString & ",Ym=" & Ym.ToString)
-        pf = 12 * W * fy / (_l ^ 2 * _s * Ym)        '(equation 7.75)
-        'lk = _l * (1 - 0.5 * Abs(psd / pf))        '(equation 7.74)
-        lk = _l                                     'equ 7.75 only for simple supported stiffeners DNV_chapter7_51
+        pf = 12 * W * fy / (_l ^ 2 * _s * Ym)           '(equation 7.75)
+        'lk = _l * (1 - 0.5 * Abs(psd / pf))            '(equation 7.74)
+        lk = _l                                         'equ 7.75 only for simple supported stiffeners DNV_chapter7_51
 
-        lambdaT = Sqrt(fy / fet)                            '(equation 7.30)
+        lambdaT = Sqrt(fy / fet)                        '(equation 7.30)
         'fr = fy                 'Plate side  MOET NOG UITGEWERKT WORDEN
 
         fr = IIf(lambdaT <= 0.6, fy, fT)
-        fe = PI ^ 2 * E_mod * (iee / lk) ^ 2                'equation 7.24
-        lambda = Sqrt(fr / fe)                              'equation 7.23
+        fe = PI ^ 2 * E_mod * (iee / lk) ^ 2            'equation 7.24
+        lambda = Sqrt(fr / fe)                          'equation 7.23
 
         If lambda <= 0.2 Then       '========== Lambda <= 0.2======
             fk_fr = 1                                           'equation 7.21
         Else                        '========== Lambda > 0.2======
-
-
             mu1 = (0.34 + 0.08 * Zt / iee) * (lambda - 0.2)     'equation 7.26
             mu2 = (0.34 + 0.08 * Zp / iee) * (lambda - 0.2)     'equation 7.25
-
 
             fk_fr = 1 + mu1 + lambda ^ 2           'equation 7.22 (opgelet mu-mu1,mu2 ??)
             fk_fr -= Sqrt((1 + mu1 + lambda ^ 2) ^ 2 - 4 * lambda ^ 2)
             fk_fr /= 2 * lambda ^ 2
         End If
 
-        TextBox76.Text = Math.Round(mu1, 2).ToString
-        TextBox75.Text = Math.Round(mu2, 2).ToString
+        TextBox76.Text = Math.Round(mu1, 2).ToString("f2")
+        TextBox75.Text = Math.Round(mu2, 2).ToString("f2")
         TextBox77.Text = Math.Round(fe, 0).ToString
         TextBox78.Text = Math.Round(lambda, 3).ToString
-        TextBox79.Text = Math.Round(fk_fr, 2).ToString
+        TextBox79.Text = Math.Round(fk_fr, 2).ToString("f2")
         TextBox85.Text = Math.Round(lambdaT, 2).ToString
         TextBox86.Text = Math.Round(lk, 2).ToString
         TextBox88.Text = Math.Round(fT, 2).ToString
@@ -622,17 +621,29 @@ Public Class Form1
         TextBox143.Text = Math.Round(tau_Rds, 0).ToString
         TextBox144.Text = Math.Round(tau_Rdl, 0).ToString
         TextBox136.Text = Math.Round(tau_RdY, 0).ToString
+
+        '-------- check ---------------
+        TextBox143.BackColor = IIf(tau_Rds >= tau_sd, Color.LightGreen, Color.Red)
+        TextBox144.BackColor = IIf(tau_Rdl >= tau_sd, Color.LightGreen, Color.Red)
+        TextBox136.BackColor = IIf(tau_RdY >= tau_sd, Color.LightGreen, Color.Red)
+
     End Sub
     Private Sub DNV_chapter7_71()
         Dim u As Double
         Dim tau_sd, tau_Rd As Double
         Dim e750, e751, e752, e753 As Double
         Dim e754, e755, e756, e757 As Double
+        Dim q_sd, M1_sd, M2_sd As Double
 
         tau_sd = 999
         tau_Rd = 888
+        q_sd = 888
 
-        u = tau_sd / tau_Rd                   'equation 7.58
+        u = (tau_sd / tau_Rd) ^ 2                   'equation 7.58
+
+        M1_sd = q_sd * _l / 12
+        M2_sd = q_sd * _l / 24
+
 
         e750 = 1
         e751 = 2
@@ -683,7 +694,7 @@ Public Class Form1
       vbTab & "Stainless steel 304L" & vbTab & vbTab & "@ 20c" & vbTab & "220 [N/mm2]" & vbCrLf &
       vbTab & "Stainless steel 316L" & vbTab & vbTab & "@ 20c" & vbTab & "195 [N/mm2]" & vbCrLf &
        vbTab & "Stainless steel 316L" & vbTab & vbTab & "@ 200c" & vbTab & "152 [N/mm2]"
-        DNV_chapter6_3()
+
     End Sub
 
     Private Sub Button4_Click(sender As Object, e As EventArgs) Handles NumericUpDown7.ValueChanged, NumericUpDown19.ValueChanged, NumericUpDown10.ValueChanged, Button4.Click
@@ -700,9 +711,13 @@ Public Class Form1
         G = E_mod / (2 * (1 + pv))          'Shear modulus
         psd = NumericUpDown45.Value / 1000 ^ 2  '[N/mm2]
 
-        _s = NumericUpDown39.Value           'Stiffeners distance
-        _t = NumericUpDown36.Value           'Plate thickness
-        _l = NumericUpDown47.Value      'stiffeners length
+        _s = NumericUpDown8.Value           'Stiffeners distance
+        _l = NumericUpDown3.Value           'stiffeners length
+        _t = NumericUpDown6.Value           'Plate thickness
+        _gl = NumericUpDown28.Value         'girder length
+
+        NumericUpDown8.BackColor = IIf(_s < _l, Color.Yellow, Color.LightCoral)
+        NumericUpDown3.BackColor = IIf(_s < _l, Color.Yellow, Color.LightCoral)
 
         TextBox114.Text = Math.Round(G, 0).ToString
     End Sub
@@ -712,14 +727,14 @@ Public Class Form1
         Dim hw, tw As Double    'Dimensions web
         Dim Ie, Ie1, Ie2, Ae, ie_small_char As Double
         Dim A1, A2, dY As Double
-        bf = NumericUpDown33.Value           'Flange width
+        bf = NumericUpDown33.Value          'Flange width
         tf = NumericUpDown37.Value          'Flange thickness
         hw = NumericUpDown35.Value          'web height
         tw = NumericUpDown40.Value          'web thickness
 
         '----------  Centroid calculation ------------------
-        A1 = bf * tf                     'Cross section area flange
-        A2 = hw * tw                    'Cross section area web
+        A1 = bf * tf                        'Cross section area flange
+        A2 = hw * tw                        'Cross section area web
 
         dY = hw / 2 + tw / 2
         dY = (dY * A1) / (A1 + A2)
@@ -733,10 +748,11 @@ Public Class Form1
 
         Ae = A1 + A2        'Effective area
 
-        '---------------- Moment of inertia ----------------
+        '----------- Moment of inertia ----------------
+        'Neutral line sits on foot of flange
         Ie1 = tw * hw ^ 3 / 3   'Web part
 
-        Ie2 = bf * tf / 12      'Flange part
+        Ie2 = bf * tf ^ 3 / 12  'Flange part
         Ie2 += A1 * hw ^ 2      'Flange part verschuiving naar buiten
 
         Ie = Ie1 + Ie2
@@ -754,7 +770,7 @@ Public Class Form1
         TextBox116.Text = Math.Round(Ae, 0).ToString
     End Sub
 
-    Private Sub Button5_Click(sender As Object, e As EventArgs) Handles RadioButton2.CheckedChanged, RadioButton1.CheckedChanged, NumericUpDown20.VisibleChanged, NumericUpDown20.ValueChanged, NumericUpDown16.ValueChanged, GroupBox13.VisibleChanged, Button5.Click, NumericUpDown28.ValueChanged, NumericUpDown25.ValueChanged
+    Private Sub Button5_Click(sender As Object, e As EventArgs) Handles RadioButton2.CheckedChanged, RadioButton1.CheckedChanged, NumericUpDown20.VisibleChanged, NumericUpDown20.ValueChanged, NumericUpDown16.ValueChanged, GroupBox13.VisibleChanged, Button5.Click, NumericUpDown25.ValueChanged
         Calc_sequence()
     End Sub
 
@@ -774,10 +790,9 @@ Public Class Form1
         Calc_sequence()
     End Sub
 
-    Private Sub Button10_Click(sender As Object, e As EventArgs) Handles Button10.Click, TabPage12.Enter, NumericUpDown40.ValueChanged, NumericUpDown37.ValueChanged, NumericUpDown35.ValueChanged, NumericUpDown33.ValueChanged
+    Private Sub Button10_Click(sender As Object, e As EventArgs) Handles Button10.Click, TabPage12.Enter, NumericUpDown40.ValueChanged, NumericUpDown37.ValueChanged, NumericUpDown35.ValueChanged, NumericUpDown33.ValueChanged, NumericUpDown8.ValueChanged, NumericUpDown6.ValueChanged, NumericUpDown3.ValueChanged, NumericUpDown28.ValueChanged, NumericUpDown14.ValueChanged
         Calc_sequence()
     End Sub
-
     Private Sub Button11_Click(sender As Object, e As EventArgs) Handles Button11.Click, TabPage13.Enter
         Calc_sequence()
     End Sub
@@ -785,11 +800,10 @@ Public Class Form1
     Private Sub Button12_Click(sender As Object, e As EventArgs) Handles Button12.Click, TabPage14.Enter
         Calc_sequence()
     End Sub
-
     Private Sub Button13_Click(sender As Object, e As EventArgs) Handles Button13.Click, TabPage15.Click
         Calc_sequence()
     End Sub
-    Private Sub Button6_Click(sender As Object, e As EventArgs) Handles NumericUpDown47.ValueChanged, NumericUpDown45.ValueChanged, NumericUpDown44.ValueChanged, NumericUpDown43.ValueChanged, NumericUpDown42.ValueChanged, NumericUpDown39.ValueChanged, NumericUpDown36.ValueChanged, Button6.Click
+    Private Sub Button6_Click(sender As Object, e As EventArgs) Handles NumericUpDown45.ValueChanged, NumericUpDown44.ValueChanged, NumericUpDown43.ValueChanged, NumericUpDown42.ValueChanged, Button6.Click
         Calc_sequence()
     End Sub
 
@@ -797,13 +811,15 @@ Public Class Form1
         Calc_sequence()
     End Sub
 
+    Private Sub Button1_Click(sender As Object, e As EventArgs) Handles TabPage1.Enter, NumericUpDown9.ValueChanged, NumericUpDown5.ValueChanged, NumericUpDown4.ValueChanged, NumericUpDown2.ValueChanged, NumericUpDown1.ValueChanged, Button1.Click, NumericUpDown11.ValueChanged
+        Calc_sequence()
+    End Sub
 
     Private Sub Calc_sequence()
         Get_material_data()
         Calc_weight_and_loads()
         Stiffener_data()
         DNV_chapter5_0()
-        DNV_chapter7_52()
         DNV_chapter6_2()    'Unstiffened plate longitudinal uniform loading
         DNV_chapter6_3()    'Unstiffened plate transverse uniform loading
         DNV_chapter6_6() 'Chapter 6.6
@@ -816,5 +832,10 @@ Public Class Form1
         DNV_chapter7_52() 'Chapter 7.5.2
         DNV_chapter7_71() 'Chapter 7.7.1
         DNV_chapter7_73() 'Chapter 7.7.3
+
+    End Sub
+
+    Private Sub GroupBox36_Enter(sender As Object, e As EventArgs) Handles GroupBox36.Enter
+
     End Sub
 End Class
