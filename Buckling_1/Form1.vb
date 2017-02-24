@@ -784,7 +784,7 @@ Public Class Form1
 
     End Sub
     Private Sub DNV_chapter7_73() 'Chapter 7.7.3
-        Dim Nrd, Ac, A_s, Sc As Double
+        Dim Nrd, Ac, A_s, Se As Double
         Dim Ie, iee, Ae, fT As Double
         Dim Zp, Zt, lk, fet As Double
         Dim pf, W, Wep, Wes As Double
@@ -799,10 +799,14 @@ Public Class Form1
         Double.TryParse(TextBox97.Text, fet)
         Double.TryParse(TextBox192.Text, A_s)   'Area stiffener
         Double.TryParse(TextBox193.Text, Ac)   'Area stiffener + plate
+        Double.TryParse(TextBox127.Text, fr)    'Characteristic strength
+
 
         ' MessageBox.Show("W=" & W.ToString & ",_fy=" & _fy.ToString & ",L=" & _l.ToString & ",S=" & _S.ToString & ",_Ym=" & _Ym.ToString)
 
-
+        Wep = Ie / Zp                                   '(equation 7.71a)
+        Wes = Ie / Zt
+        W = IIf(Wep < Wes, Wep, Wes)
 
         pf = 12 * W * _fy / (_l ^ 2 * _s * _Ym)         '(equation 7.75)
         'lk = _l * (1 - 0.5 * Abs(_psd / pf))           '(equation 7.74)
@@ -810,28 +814,23 @@ Public Class Form1
 
         Ne = PI ^ 2 * _E_mod * Ac / (lk / iee) ^ 2       '(equation 7.72)
 
-        Wep = Ie / Zp                                   '(equation 7.71a)
-        Wes = Ie / Zt
-        W = IIf(Wep < Wes, Wep, Wes)
-
         MpRd = Wep * _fy / _Ym              '(equation 7.71)
         MstRd = Wes * _fy / _Ym             '(equation 7.70)
 
+        fr = 99999                          'Section 7.5
+        Ms2Rd = Wes * fr / _Ym              '(equation 7.69)
+        Ms1Rd = Wes * fr / _Ym              '(equation 7.68)
 
-        fr = 99999                          'Section 7.5)
-        Ms2Rd = Wes * fr / _Ym             '(equation 7.69)
-        Ms1Rd = Wes * fr / _Ym             '(equation 7.68)
+        fk = 99999                          '(equation 7.26)
+        NkpRd = Ac * fk / _Ym               '(equation 7.67)
+        NksRd = Ac * fk / _Ym               '(equation 7.66)
 
-        fk = 99999
-        NkpRd = Ac * fk / _Ym             '(equation 7.67)
-        NksRd = Ac * fk / _Ym             '(equation 7.66)
+        Double.TryParse(TextBox49.Text, Se) 'Section 7.3
 
-        Sc = 999999
-        Nrd = 99999             '(equation 7.65)
-
+        Nrd = Ae * _fy / _Ym                '(equation 7.65)
 
         TextBox176.Text = Math.Round(_l, 0).ToString
-        TextBox174.Text = Math.Round(pf, 0).ToString
+        TextBox174.Text = Math.Round(pf, 1).ToString
         TextBox175.Text = Math.Round(W, 0).ToString
         TextBox173.Text = Math.Round(lk, 0).ToString
         TextBox171.Text = Math.Round(iee, 0).ToString
@@ -846,11 +845,11 @@ Public Class Form1
         TextBox164.Text = Math.Round(Ms2Rd, 0).ToString
         TextBox163.Text = Math.Round(Ms1Rd, 0).ToString
         TextBox162.Text = Math.Round(NkpRd, 0).ToString
-
         TextBox156.Text = Math.Round(NksRd, 0).ToString
-        Ac = 0
-
-        TextBox155.Text = Math.Round(Ac, 0).ToString
+        TextBox155.Text = Math.Round(Nrd, 0).ToString
+        TextBox194.Text = Math.Round(Se, 0).ToString
+        TextBox195.Text = Math.Round(fr, 0).ToString
+        TextBox196.Text = Math.Round(fk, 0).ToString
     End Sub
     Private Sub Button1_Click(sender As Object, e As EventArgs) Handles TabPage1.Enter, NumericUpDown9.ValueChanged, NumericUpDown5.ValueChanged, NumericUpDown4.ValueChanged, NumericUpDown2.ValueChanged, NumericUpDown1.ValueChanged, Button1.Click, NumericUpDown11.ValueChanged
         Calc_sequence()
