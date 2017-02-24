@@ -60,7 +60,7 @@ Public Class Form1
         Dim bf, tf As Double    'Dimensions flange
         Dim hw, tw As Double    'Dimensions web
         Dim Ie, Ie1, Ie2, Ae, ie_small_char As Double
-        Dim A1, A2, dY As Double
+        Dim A1, A2, A3, dY As Double
         bf = NumericUpDown33.Value          'Flange width
         tf = NumericUpDown37.Value          'Flange thickness
         hw = NumericUpDown35.Value          'web height
@@ -69,6 +69,7 @@ Public Class Form1
         '----------  Centroid calculation ------------------
         A1 = bf * tf                        'Cross section area flange
         A2 = hw * tw                        'Cross section area web
+        A3 = _s * _t                        'Cross section plate
 
         dY = hw / 2 + tw / 2
         dY = (dY * A1) / (A1 + A2)
@@ -93,8 +94,11 @@ Public Class Form1
 
         ie_small_char = Sqrt(Ie / Ae) 'Effective radius of gyration
 
-        TextBox100.Text = Math.Round(A1, 1).ToString
-        TextBox101.Text = Math.Round(A2, 1).ToString
+        TextBox100.Text = Math.Round(A1, 0).ToString
+        TextBox101.Text = Math.Round(A2, 0).ToString
+        TextBox192.Text = Math.Round(A1 + A2, 0).ToString
+        TextBox193.Text = Math.Round(A3, 1).ToString
+
         TextBox102.Text = Math.Round(Zt, 1).ToString
         TextBox103.Text = Math.Round(Zp, 1).ToString
         TextBox105.Text = Math.Round(hs, 1).ToString
@@ -505,8 +509,8 @@ Public Class Form1
         Double.TryParse(TextBox103.Text, Zp)
         Double.TryParse(TextBox102.Text, Zt)
         Double.TryParse(TextBox116.Text, Ae)
-        Double.TryParse(TextBox87.Text, iee)
-        Double.TryParse(TextBox99.Text, fT)     'SECTION 7.52
+        Double.TryParse(TextBox87.Text, iee)     'equation 7.73
+        Double.TryParse(TextBox99.Text, fT)         'SECTION 7.52
         Double.TryParse(TextBox97.Text, fet)
 
         Wep = Ie / Zp                            '(equation 7.71a)
@@ -784,50 +788,52 @@ Public Class Form1
         Dim Ie, iee, Ae, fT As Double
         Dim Zp, Zt, lk, fet As Double
         Dim pf, W, Wep, Wes As Double
+        Dim Ne As Double
 
-        Double.TryParse(TextBox115.Text, Ie)
+        Double.TryParse(TextBox115.Text, Ie)    '(equation 7.73)
         Double.TryParse(TextBox103.Text, Zp)
         Double.TryParse(TextBox102.Text, Zt)
         Double.TryParse(TextBox116.Text, Ae)
-        Double.TryParse(TextBox87.Text, iee)
+        Double.TryParse(TextBox87.Text, iee)     '(equation 7.72)
         Double.TryParse(TextBox99.Text, fT)     'SECTION 7.52
         Double.TryParse(TextBox97.Text, fet)
+        Double.TryParse(TextBox192.Text, A_s)   'Area stiffener
+        Double.TryParse(TextBox193.Text, Ac)   'Area stiffener + plate
 
         ' MessageBox.Show("W=" & W.ToString & ",_fy=" & _fy.ToString & ",L=" & _l.ToString & ",S=" & _S.ToString & ",_Ym=" & _Ym.ToString)
 
-        pf = 12 * W * _fy / (_l ^ 2 * _s * _Ym)           '(equation 7.75)
-        'lk = _l * (1 - 0.5 * Abs(_psd / pf))            '(equation 7.74)
+
+        W = IIf(Wep < Wes, Wep, Wes)
+        pf = 12 * W * _fy / (_l ^ 2 * _s * _Ym)         '(equation 7.75)
+        'lk = _l * (1 - 0.5 * Abs(_psd / pf))           '(equation 7.74)
         lk = _l                                         'equ 7.75 only for simple supported stiffeners DNV_chapter7_51
 
+        Ne = PI ^ 2 * _E_mod * Ac / (lk / iee) ^ 2       '(equation 7.72)
 
-        Wep = Ie / Zp                            '(equation 7.71a)
+        Wep = Ie / Zp                                   '(equation 7.71a)
         Wes = Ie / Zt
-        W = IIf(Wep < Wes, Wep, Wes)
 
         Nrd = 99
-        Ac = 99
-        A_s = 99
         Sc = 99
 
-        Wep = Ie / Zp                            '(equation 7.71a)
-        Wes = Ie / Zt
-        W = IIf(Wep < Wes, Wep, Wes)
+        TextBox176.Text = Math.Round(_l, 0).ToString
+        TextBox174.Text = Math.Round(pf, 0).ToString
+        TextBox175.Text = Math.Round(W, 0).ToString
+        TextBox173.Text = Math.Round(lk, 0).ToString
+        TextBox171.Text = Math.Round(iee, 0).ToString
+        TextBox167.Text = Math.Round(Ne, 0).ToString
 
 
-
-        TextBox168.Text = Math.Round(Nrd, 0).ToString
+        Ac = 0
         TextBox170.Text = Math.Round(Ac, 0).ToString
-        TextBox172.Text = Math.Round(A_s, 0).ToString
-
-        TextBox155.Text = Math.Round(Nrd, 0).ToString
+        TextBox172.Text = Math.Round(Ac, 0).ToString
+        TextBox155.Text = Math.Round(Ac, 0).ToString
         TextBox156.Text = Math.Round(Ac, 0).ToString
-        TextBox162.Text = Math.Round(A_s, 0).ToString
-
-        TextBox163.Text = Math.Round(Nrd, 0).ToString
+        TextBox162.Text = Math.Round(Ac, 0).ToString
+        TextBox163.Text = Math.Round(Ac, 0).ToString
         TextBox164.Text = Math.Round(Ac, 0).ToString
-        TextBox165.Text = Math.Round(A_s, 0).ToString
+        TextBox165.Text = Math.Round(Ac, 0).ToString
         TextBox166.Text = Math.Round(Ac, 0).ToString
-        TextBox167.Text = Math.Round(A_s, 0).ToString
 
     End Sub
     Private Sub Button1_Click(sender As Object, e As EventArgs) Handles TabPage1.Enter, NumericUpDown9.ValueChanged, NumericUpDown5.ValueChanged, NumericUpDown4.ValueChanged, NumericUpDown2.ValueChanged, NumericUpDown1.ValueChanged, Button1.Click, NumericUpDown11.ValueChanged
@@ -895,7 +901,7 @@ Public Class Form1
 
     End Sub
 
-    Private Sub GroupBox31_Enter(sender As Object, e As EventArgs) Handles GroupBox31.Enter
+    Private Sub GroupBox35_Enter(sender As Object, e As EventArgs) Handles GroupBox35.Enter
 
     End Sub
 End Class
