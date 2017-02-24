@@ -3,18 +3,106 @@ Imports System.Text
 Imports System.Math
 
 Public Class Form1
-    Public fy As Double         'Yield stress
-    Public Ym As Double         'Safety factor
-    Public E_mod As Double      'Elasticity [N/mm2]
-    Public G As Double          'Shear modulus
-    Public psd As Double        'Lateral load [N/mm2]
-    Public _t As Double         'Plate thickness
-    Public _s As Double         'Stiffeners distance
-    Public _l As Double         'stiffeners length
-    Public _gl As Double        'girder length
+    Public _fy As Double        'Yield stress [N/mm2]
+    Public _Ym As Double        'Safety factor [-]
+    Public _E_mod As Double     'Elasticity [N/mm2]
+    Public _G As Double         'Shear modulus
+    Public _psd As Double       'Lateral load [N/mm2]
+    Public _t As Double         'Plate thickness [mm]
+    Public _s As Double         'Stiffeners distance [mm]
+    Public _l As Double         'stiffeners length [mm]
+    Public _LG As Double        'girder length [mm]
 
 
+    Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+        Calc_sequence()
 
+        TextBox23.Text =
+        "Based on " & vbCrLf &
+        "Recommended Practice DNV-RP-C201, October 2010" & vbCrLf &
+        "Buckling Strength of plated structures" & vbCrLf &
+        "https://rules.dnvgl.com/servicedocuments/dnv" & vbCrLf & vbCrLf &
+        "See also" & vbCrLf &
+        "http://www.steelconstruction.info/Stiffeners"
+
+        TextBox25.Text =
+      vbTab & "Construction steel S235JR" & vbTab & "@ 20c" & vbTab & "235 [N/mm2]" & vbCrLf &
+      vbTab & "Construction steel S355JR" & vbTab & "@ 20c" & vbTab & "335 [N/mm2]" & vbCrLf &
+      vbTab & "Stainless steel 304L" & vbTab & vbTab & "@ 20c" & vbTab & "220 [N/mm2]" & vbCrLf &
+      vbTab & "Stainless steel 316L" & vbTab & vbTab & "@ 20c" & vbTab & "195 [N/mm2]" & vbCrLf &
+      vbTab & "Stainless steel 316L" & vbTab & vbTab & "@ 200c" & vbTab & "152 [N/mm2]"
+
+    End Sub
+
+    Private Sub Get_material_data()
+        Dim pv, G As Double
+
+        _fy = NumericUpDown19.Value         'Yield stress
+        _E_mod = NumericUpDown7.Value       'Elasticity [N/mm2]
+        _Ym = NumericUpDown10.Value         'Safety
+        pv = NumericUpDown17.Value          'Poissons ration
+
+        G = _E_mod / (2 * (1 + pv))         'Shear modulus
+        _psd = NumericUpDown45.Value / 1000 ^ 2  '[N/mm2]
+
+        _s = NumericUpDown8.Value           'Stiffeners distance
+        _l = NumericUpDown3.Value           'stiffeners length
+        _t = NumericUpDown6.Value           'Plate thickness
+        _LG = NumericUpDown28.Value         'girder length
+
+        NumericUpDown8.BackColor = IIf(_s < _l, Color.Yellow, Color.LightCoral)
+        NumericUpDown3.BackColor = IIf(_s < _l, Color.Yellow, Color.LightCoral)
+
+        TextBox114.Text = Math.Round(G, 0).ToString
+    End Sub
+    Private Sub Stiffener_data()
+        Dim Zp, Zt, hs, ef As Double
+        Dim bf, tf As Double    'Dimensions flange
+        Dim hw, tw As Double    'Dimensions web
+        Dim Ie, Ie1, Ie2, Ae, ie_small_char As Double
+        Dim A1, A2, dY As Double
+        bf = NumericUpDown33.Value          'Flange width
+        tf = NumericUpDown37.Value          'Flange thickness
+        hw = NumericUpDown35.Value          'web height
+        tw = NumericUpDown40.Value          'web thickness
+
+        '----------  Centroid calculation ------------------
+        A1 = bf * tf                        'Cross section area flange
+        A2 = hw * tw                        'Cross section area web
+
+        dY = hw / 2 + tw / 2
+        dY = (dY * A1) / (A1 + A2)
+        TextBox118.Text = Math.Round(dY, 1).ToString
+
+        Zt = hw / 2 + dY
+        Zp = hw / 2 - dY
+
+        hs = hw / 2           '??????????
+        ef = bf / 2
+
+        Ae = A1 + A2        'Effective area
+
+        '----------- Moment of inertia ----------------
+        'Neutral line sits on foot of flange
+        Ie1 = tw * hw ^ 3 / 3   'Web part
+
+        Ie2 = bf * tf ^ 3 / 12  'Flange part
+        Ie2 += A1 * hw ^ 2      'Flange part verschuiving naar buiten
+
+        Ie = Ie1 + Ie2
+
+        ie_small_char = Sqrt(Ie / Ae) 'Effective radius of gyration
+
+        TextBox100.Text = Math.Round(A1, 1).ToString
+        TextBox101.Text = Math.Round(A2, 1).ToString
+        TextBox102.Text = Math.Round(Zt, 1).ToString
+        TextBox103.Text = Math.Round(Zp, 1).ToString
+        TextBox105.Text = Math.Round(hs, 1).ToString
+        TextBox106.Text = Math.Round(ef, 1).ToString
+        TextBox87.Text = Math.Round(ie_small_char, 1).ToString
+        TextBox115.Text = Math.Round(Ie, 0).ToString
+        TextBox116.Text = Math.Round(Ae, 0).ToString
+    End Sub
 
     Private Sub Calc_weight_and_loads()
         'Determine the weight and the stress due to weight
@@ -84,19 +172,19 @@ Public Class Form1
         sigma_Jsd = Math.Sqrt(sigma_Xsd ^ 2 + sigma_Ysd ^ 2 - sigma_Xsd * sigma_Ysd + 3 * tau_sd ^ 2)
 
         'Calc constant (equation 5.3)
-        upsilon_X = 1 - (sigma_Jsd / fy) ^ 2
-        upsilon_X /= Math.Sqrt(1 - (3 / 4 * (sigma_Ysd / fy) ^ 2)) - 3 * (tau_sd / fy) ^ 2
+        upsilon_X = 1 - (sigma_Jsd / _fy) ^ 2
+        upsilon_X /= Math.Sqrt(1 - (3 / 4 * (sigma_Ysd / _fy) ^ 2)) - 3 * (tau_sd / _fy) ^ 2
 
         'Calc constant (equation 5.2)
-        upsilon_Y = 1 - (sigma_Jsd / fy) ^ 2
-        upsilon_Y /= Math.Sqrt(1 - (3 / 4 * (sigma_Xsd / fy) ^ 2)) - 3 * (tau_sd / fy) ^ 2
+        upsilon_Y = 1 - (sigma_Jsd / _fy) ^ 2
+        upsilon_Y /= Math.Sqrt(1 - (3 / 4 * (sigma_Xsd / _fy) ^ 2)) - 3 * (tau_sd / _fy) ^ 2
 
         'Psd Check (equation 5.1)
-        Psd_check = 4 * fy / Ym * ((_t / _s) ^ 2)
+        Psd_check = 4 * _fy / _Ym * ((_t / _s) ^ 2)
         Psd_check *= upsilon_Y + ((_s / _l) ^ 2 * upsilon_X)
 
         'Results
-        TextBox130.Text = Math.Round(Psd, 4).ToString
+        TextBox130.Text = Math.Round(_psd, 4).ToString
         TextBox107.Text = Math.Round(sigma_Jsd, 1).ToString
         TextBox1.Text = Math.Round(upsilon_X, 4).ToString
         TextBox2.Text = Math.Round(upsilon_Y, 4).ToString
@@ -106,9 +194,7 @@ Public Class Form1
         TextBox187.Text = Math.Round(_t, 0).ToString
 
         'Checks
-
-
-        If Psd < Psd_check Then
+        If _psd < Psd_check Then
             TextBox4.BackColor = Color.LightGreen
             Label118.Visible = False
         Else
@@ -116,7 +202,7 @@ Public Class Form1
             Label118.Visible = True
         End If
 
-        epsilon = Math.Sqrt(235 / fy)
+        epsilon = Math.Sqrt(235 / _fy)
         Label18.Text = IIf(_s / _t < 5.4 * epsilon, "Buckling check NOT neccessary", "Buckling check is neccessary !!")
     End Sub
 
@@ -124,7 +210,7 @@ Public Class Form1
         '============ Longitudinal uniform compression chapter 6.2 ===========
         Dim lambda_P, Cx, sigma_Xrd, sigma_Xsd As Double
         sigma_Xsd = NumericUpDown43.Value   'Design stress
-        lambda_P = 0.525 * _s / _t * Math.Sqrt(fy / E_mod)    'formule 6.3
+        lambda_P = 0.525 * _s / _t * Math.Sqrt(_fy / _E_mod)    'formule 6.3
 
         If lambda_P < 0.673 Then            'formule 6.2
             Cx = 1
@@ -132,7 +218,7 @@ Public Class Form1
             Cx = (lambda_P - 0.22) / lambda_P ^ 2
         End If
 
-        sigma_Xrd = Cx * fy / Ym           'formule 6.1
+        sigma_Xrd = Cx * _fy / _Ym           'formule 6.1
 
         TextBox3.Text = Math.Round(lambda_P, 2).ToString
         TextBox15.Text = Math.Round(Cx, 2).ToString
@@ -159,15 +245,15 @@ Public Class Form1
         h_alfa = 0.05 * _s / _t - 0.75
 
         '========== kp  ============ Formule 6.10
-        If psd <= 2 * (_t / _s) ^ 2 * fy Then
+        If _psd <= 2 * (_t / _s) ^ 2 * _fy Then
             Kp = 1
         Else
-            Kp = 1 - h_alfa * (psd / fy - 2 * (_t / _s) ^ 2)
+            Kp = 1 - h_alfa * (_psd / _fy - 2 * (_t / _s) ^ 2)
             If Kp < 0 Then Kp = 0
         End If
 
         '======== lambda_C ========= Formule 6.8
-        lambda_C = 1.1 * _s / _t * Math.Sqrt(fy / E_mod)
+        lambda_C = 1.1 * _s / _t * Math.Sqrt(_fy / _E_mod)
 
         '=========== kappa======= Formule 6.7
         If lambda_C <= 0.2 Then kappa = 1
@@ -181,12 +267,12 @@ Public Class Form1
         mu = 0.21 * (lambda_C - 0.2)
 
         '========== sigma_YR ========== Formule 6.6
-        sigma_YR = 1.3 * _t / _l * Math.Sqrt(E_mod / fy)
-        sigma_YR += kappa * (1 - 1.3 * _t / _l * Math.Sqrt(E_mod / fy))
-        sigma_YR *= fy * Kp
+        sigma_YR = 1.3 * _t / _l * Math.Sqrt(_E_mod / _fy)
+        sigma_YR += kappa * (1 - 1.3 * _t / _l * Math.Sqrt(_E_mod / _fy))
+        sigma_YR *= _fy * Kp
 
         '========== sigma_YR ========== Formule 6.5
-        sigma_YRd = sigma_YR / Ym
+        sigma_YRd = sigma_YR / _Ym
 
         TextBox65.Text = Math.Round(_s, 1).ToString
         TextBox66.Text = Math.Round(_l, 2).ToString
@@ -201,7 +287,7 @@ Public Class Form1
 
         TextBox24.Text = Math.Round(sigma_YRd, 0).ToString  '6.5
         TextBox64.Text = Math.Round(sigma_Ysd, 0).ToString
-        TextBox132.Text = Math.Round(psd, 0).ToString
+        TextBox132.Text = Math.Round(_psd, 0).ToString
 
         '---------------- Check stress------------------
         TextBox24.BackColor = IIf(sigma_YRd >= sigma_Ysd, Color.LightGreen, Color.Red)
@@ -216,7 +302,7 @@ Public Class Form1
         kappa_sigma = 8.2 / (1.05 + 1)      'equation 6.44
 
         '------------- slenderness calculation--------------------
-        upsilon = Sqrt(235 / fy)
+        upsilon = Sqrt(235 / _fy)
         lambda_P = _s / _t * 1 / (28.4 * upsilon * Sqrt(kappa_sigma)) 'equation 6.24
 
         If lambda_P <= 0.673 Then
@@ -225,7 +311,7 @@ Public Class Form1
             cx = (lambda_P - 0.055 * (3 + 1)) / lambda_P ^ 2     'equation 6.23
         End If
 
-        sigma_xRd = cx * fy / Ym            'equation 6.21
+        sigma_xRd = cx * _fy / _Ym            'equation 6.21
 
         TextBox50.Text = Math.Round(kappa_sigma, 2).ToString
         TextBox51.Text = Math.Round(upsilon, 2).ToString
@@ -252,7 +338,7 @@ Public Class Form1
         End If
 
         '------------- slenderness calculation--------------------
-        upsilon = Sqrt(235 / fy)
+        upsilon = Sqrt(235 / _fy)
 
         lambda_P = _s / _t * 1 / (28.4 * upsilon * Sqrt(kappa_sigma)) 'equation 6.29
 
@@ -262,7 +348,7 @@ Public Class Form1
             cx = (lambda_P - 0.188) / lambda_P ^ 2     'equation 6.28
         End If
 
-        sigma_xRd = cx * fy / Ym            'equation 6.21
+        sigma_xRd = cx * _fy / _Ym            'equation 6.21
 
         TextBox55.Text = Math.Round(kappa_sigma, 2).ToString
         TextBox56.Text = Math.Round(upsilon, 2).ToString
@@ -285,8 +371,6 @@ Public Class Form1
         Dim psi, I_s As Double
         Dim q_sd, p_0, C0, Kc As Double
         Dim K_l, k_g As Double
-
-
 
         sigma_Xsd = NumericUpDown16.Value   'design stress axial stress in plate and stiffener
         sigma_Y1sd = NumericUpDown25.Value  'design stress transverse direction
@@ -318,22 +402,22 @@ Public Class Form1
             mc = 8.9        'Snipped stiffeners
         End If
 
-        C0 = Wes * fy * mc / (Kc * E_mod * _t ^ 2 * _s)     'equation 7.11 
+        C0 = Wes * _fy * mc / (Kc * _E_mod * _t ^ 2 * _s)     'equation 7.11 
         'p_0 equation is not applicable                     'equation 7.10
         p_0 = (0.6 + 0.4) * C0 * sigma_Y1sd                 'equation 7.9
-        q_sd = (psd + p_0) * _t                             'equation 7.8
+        q_sd = (_psd + p_0) * _t                             'equation 7.8
         If _l >= _s Then
             K_l = 5.34 + 4 * (_t / _s) ^ 2                  'equation 7.7
         Else
             K_l = 5.34 * (_t / _s) ^ 2 + 4
         End If
-        tau_crl = K_l * 0.904 * E_mod * (_t / _s) ^ 2       'equation 7.6
-        If _l <= _gl Then
-            k_g = 5.34 + 4 * (_l / _gl) ^ 2                  'equation 7.5
+        tau_crl = K_l * 0.904 * _E_mod * (_t / _s) ^ 2       'equation 7.6
+        If _l <= _LG Then
+            k_g = 5.34 + 4 * (_l / _LG) ^ 2                  'equation 7.5
         Else
-            k_g = 5.34 * (_l / _gl) ^ 2 + 4
+            k_g = 5.34 * (_l / _LG) ^ 2 + 4
         End If
-        tau_crg = k_g * 0.904 * E_mod * (_t / _l) ^ 2       'equation 7.4
+        tau_crg = k_g * 0.904 * _E_mod * (_t / _l) ^ 2       'equation 7.4
 
         '========== Equivalent axial load ========== 
         N_Sd = sigma_Xsd * (A_s + _s * _t) + tau_tf * _s * _t 'Formule 7.1
@@ -348,7 +432,7 @@ Public Class Form1
         TextBox36.Text = Math.Round(K_l, 2).ToString
         TextBox37.Text = Math.Round(k_g, 2).ToString
         TextBox38.Text = Math.Round(tau_crg, 0).ToString
-        TextBox133.Text = Math.Round(psd, 4).ToString
+        TextBox133.Text = Math.Round(_psd, 4).ToString
 
         TextBox181.Text = Math.Round(_s, 0).ToString
         TextBox182.Text = Math.Round(_t, 0).ToString
@@ -365,7 +449,7 @@ Public Class Form1
         Double.TryParse(TextBox22.Text, sigma_Yr)       'equation 6.6
 
         '--------------- equation 7.15---
-        lambda_p = 0.525 * _s / _t * Sqrt(fy / E_mod)
+        lambda_p = 0.525 * _s / _t * Sqrt(_fy / _E_mod)
 
         '--------------- equation 7.14---
         Cxs = (lambda_p - 0.22) / lambda_p ^ 2
@@ -378,7 +462,7 @@ Public Class Form1
         End If
 
         Cys = (sigma_Ysd / sigma_Yr) ^ 2
-        Cys = Cys + Ci * (sigma_Xsd * sigma_Ysd / (Cxs * fy * sigma_Yr))
+        Cys = Cys + Ci * (sigma_Xsd * sigma_Ysd / (Cxs * _fy * sigma_Yr))
         Cys = Sqrt(1 - Cys)
 
         '--------------- equation 7.13---
@@ -388,7 +472,7 @@ Public Class Form1
         TextBox42.Text = Math.Round(_t, 0).ToString
         TextBox44.Text = Math.Round(sigma_Xsd, 0).ToString
         TextBox43.Text = Math.Round(sigma_Ysd, 0).ToString
-        TextBox45.Text = Math.Round(fy, 0).ToString
+        TextBox45.Text = Math.Round(_fy, 0).ToString
         TextBox46.Text = Math.Round(Cxs, 2).ToString
         TextBox47.Text = Math.Round(Cys, 2).ToString
         TextBox48.Text = Math.Round(sigma_Yr, 0).ToString
@@ -402,9 +486,9 @@ Public Class Form1
         Double.TryParse(TextBox24.Text, sigma_YRd)      'equation 6.5
         tau_sd = NumericUpDown44.Value
 
-        K_sp = Sqrt(1 - 3 * (tau_sd / fy) ^ 2)          'equation 7.20
+        K_sp = Sqrt(1 - 3 * (tau_sd / _fy) ^ 2)          'equation 7.20
         KspsigmaYrd = K_sp * sigma_YRd                  'equation 7.19
-        tau_rd = fy / ((Sqrt(3) * Ym))                  'equation 7.18
+        tau_rd = _fy / ((Sqrt(3) * _Ym))                  'equation 7.18
 
         TextBox70.Text = Math.Round(sigma_YRd, 0).ToString
         TextBox71.Text = Math.Round(K_sp, 3).ToString
@@ -429,16 +513,16 @@ Public Class Form1
         Wes = Ie / Zt
         W = IIf(Wep < Wes, Wep, Wes)
 
-        ' MessageBox.Show("W=" & W.ToString & ",fy=" & fy.ToString & ",L=" & _l.ToString & ",S=" & _S.ToString & ",Ym=" & Ym.ToString)
-        pf = 12 * W * fy / (_l ^ 2 * _s * Ym)           '(equation 7.75)
-        'lk = _l * (1 - 0.5 * Abs(psd / pf))            '(equation 7.74)
+        ' MessageBox.Show("W=" & W.ToString & ",_fy=" & _fy.ToString & ",L=" & _l.ToString & ",S=" & _S.ToString & ",_Ym=" & _Ym.ToString)
+        pf = 12 * W * _fy / (_l ^ 2 * _s * _Ym)           '(equation 7.75)
+        'lk = _l * (1 - 0.5 * Abs(_psd / pf))            '(equation 7.74)
         lk = _l                                         'equ 7.75 only for simple supported stiffeners DNV_chapter7_51
 
-        lambdaT = Sqrt(fy / fet)                        '(equation 7.30)
-        'fr = fy                 'Plate side  MOET NOG UITGEWERKT WORDEN
+        lambdaT = Sqrt(_fy / fet)                        '(equation 7.30)
+        'fr = _fy                 'Plate side  MOET NOG UITGEWERKT WORDEN
 
-        fr = IIf(lambdaT <= 0.6, fy, fT)
-        fe = PI ^ 2 * E_mod * (iee / lk) ^ 2            'equation 7.24
+        fr = IIf(lambdaT <= 0.6, _fy, fT)
+        fe = PI ^ 2 * _E_mod * (iee / lk) ^ 2            'equation 7.24
         lambda = Sqrt(fr / fe)                          'equation 7.23
 
         If lambda <= 0.2 Then       '========== Lambda <= 0.2======
@@ -494,7 +578,7 @@ Public Class Form1
         hw = NumericUpDown35.Value          'stiffeners height
         tw = NumericUpDown40.Value          'stiffeners flange thickness
 
-        Double.TryParse(TextBox114.Text, G) 'Shear modulus
+        Double.TryParse(TextBox114.Text, _G) 'Shear modulus
         Double.TryParse(TextBox102.Text, Zt)
         Double.TryParse(TextBox103.Text, Zp)
         Double.TryParse(TextBox105.Text, hs)
@@ -504,20 +588,20 @@ Public Class Form1
 
         Sigma_JSd = Math.Sqrt(sigma_Xsd ^ 2 + sigma_Ysd ^ 2 - sigma_Xsd * sigma_Ysd + 3 * tau_sd ^ 2) 'equation 7.38
 
-        F_Ept = 5.0 * E_mod * (_t / _s) ^ 2       'equation 7.44
-        F_Epy = 0.9 * E_mod * (_t / _s) ^ 2       'equation 7.43
-        F_Epx = 3.62 * E_mod * (_t / _s) ^ 2      'equation 7.42
+        F_Ept = 5.0 * _E_mod * (_t / _s) ^ 2       'equation 7.44
+        F_Epy = 0.9 * _E_mod * (_t / _s) ^ 2       'equation 7.43
+        F_Epx = 3.62 * _E_mod * (_t / _s) ^ 2      'equation 7.42
         c = 2 - (_s / _l)                    'equation 7.41
 
         lambda_e = (tau_sd / F_Ept) ^ c         'equation 7.40
         lambda_e += (sigma_Ysd / F_Epy) ^ c
         lambda_e += (sigma_Xsd / F_Epx) ^ c
         lambda_e = lambda_e ^ (1 / c)
-        lambda_e = fy / Sigma_JSd
-        lambda_e *= fy / Sigma_JSd
+        lambda_e = _fy / Sigma_JSd
+        lambda_e *= _fy / Sigma_JSd
         lambda_e = lambda_e ^ -0.5
 
-        F_ep = fy / Sqrt(1 + lambda_e ^ -4)     'equation 7.39
+        F_ep = _fy / Sqrt(1 + lambda_e ^ -4)     'equation 7.39
 
         eta = Sigma_JSd / F_ep                  'equation 7.37
         If eta > 1 Then eta = 1
@@ -528,20 +612,20 @@ Public Class Form1
 
         '--------- For NOW just flat bar-----------------
         F_ET = beta + 2 * (hw / lT) ^ 2             'equation 7.34 (Flat bar)
-        F_ET *= G * (tw / hw) ^ 2
+        F_ET *= _G * (tw / hw) ^ 2
 
-        lambdaT = Sqrt(fy / F_ET)                   'equation 7.30
+        lambdaT = Sqrt(_fy / F_ET)                   'equation 7.30
 
         mu = 0.35 * (lambdaT - 0.6)                 'equation 7.29
         '---------------------------------------------------
 
         If lambdaT <= 0.6 Then
-            fT = 1.0 * fy                           'equation 7.27
+            fT = 1.0 * _fy                           'equation 7.27
         Else
             fT = 1 + mu + lambdaT ^ 2               'equation 7.28
             fT -= Sqrt((1 + mu + lambdaT ^ 2) ^ 2 - 4 * lambdaT ^ 2)
             fT /= 2 * lambdaT ^ 2
-            fT *= fy
+            fT *= _fy
         End If
 
         Af = hw * tw + b * tf                       'Cross section area flange
@@ -550,7 +634,7 @@ Public Class Form1
         'Iz = 1 / 12 * Af * beta ^ 2                 'equation 7.33
         'Iz += ef ^ 2 * Af / (1 + Af / Aw)
 
-        'F_ET = PI ^ 2 * E_mod * Iz / ((Aw / 3 + Af) * lT ^ 2)    'equation 7.32
+        'F_ET = PI ^ 2 * _E_mod * Iz / ((Aw / 3 + Af) * lT ^ 2)    'equation 7.32
         'F_ET += beta * (Aw + (tf / tw) ^ 2 * Af * G * (tw / hw ^ 2) / (Aw + 3 * Af))
 
         TextBox89.Text = Math.Round(_s, 1).ToString
@@ -571,7 +655,7 @@ Public Class Form1
         TextBox98.Text = Math.Round(Iz, 1).ToString
         TextBox104.Text = Math.Round(lT, 1).ToString
 
-        TextBox108.Text = Math.Round(psd, 4).ToString
+        TextBox108.Text = Math.Round(_psd, 4).ToString
         TextBox109.Text = Math.Round(sigma_Xsd, 1).ToString
         TextBox110.Text = Math.Round(sigma_Ysd, 1).ToString
         TextBox111.Text = Math.Round(tau_sd, 1).ToString
@@ -595,20 +679,20 @@ Public Class Form1
 
         Double.TryParse(TextBox33.Text, Iss)
         Double.TryParse(TextBox35.Text, tau_crl)    'eq 7.6
-        tau_crs = 36 * E_mod
+        tau_crs = 36 * _E_mod
         tau_crs /= (_s * _t * _l ^ 2)
         tau_crs *= (Ip * Iss ^ 3) ^ 0.25            'eq 7.48
 
-        tau_RdY = fy / (Sqrt(3) * Ym)               'eq 7.45
-        tau_Rdl = tau_crl / Ym                      'eq 7.46
-        tau_Rds = tau_crs / Ym                      'eq 7.47
+        tau_RdY = _fy / (Sqrt(3) * _Ym)               'eq 7.45
+        tau_Rdl = tau_crl / _Ym                      'eq 7.46
+        tau_Rds = tau_crs / _Ym                      'eq 7.47
 
         '------------------ present----------------
         TextBox140.Text = Math.Round(_s, 1).ToString
         TextBox141.Text = Math.Round(_t, 1).ToString
         TextBox131.Text = Math.Round(_l, 1).ToString
 
-        TextBox149.Text = Math.Round(psd, 4).ToString
+        TextBox149.Text = Math.Round(_psd, 4).ToString
         TextBox148.Text = Math.Round(sigma_Xsd, 1).ToString
         TextBox147.Text = Math.Round(sigma_Ysd, 1).ToString
         TextBox146.Text = Math.Round(tau_sd, 1).ToString
@@ -633,141 +717,132 @@ Public Class Form1
         Dim tau_sd, tau_Rd As Double
         Dim e750, e751, e752, e753 As Double
         Dim e754, e755, e756, e757 As Double
-        Dim q_sd, M1_sd, M2_sd As Double
+        Dim q_sd, M1sd, Ms1Rd, Ms2rd, MstRd, MpRd, M2sd As Double
+        Dim Nsd, Nrd, Ne, NksRd, NkpRd, Zstar As Double
+
 
         tau_sd = 999
         tau_Rd = 888
-        q_sd = 888
+        Zstar = NumericUpDown12.Value
 
-        u = (tau_sd / tau_Rd) ^ 2                   'equation 7.58
+        Ne = 999        'equation 7.73
+        Nrd = 999
+        Ms1Rd = 999
+        Ms2rd = 999
+        NkpRd = 999
+        NksRd = 9999
+        MpRd = 999
 
-        M1_sd = q_sd * _l / 12
-        M2_sd = q_sd * _l / 24
+        Double.TryParse(TextBox40.Text, Nsd)   'equation 7.8
+        Double.TryParse(TextBox26.Text, q_sd)   'equation 7.8
+        u = (tau_sd / tau_Rd) ^ 2               'equation 7.58
 
+        M1sd = q_sd * _l / 12
+        M2sd = q_sd * _l / 24
 
-        e750 = 1
-        e751 = 2
-        e752 = 3
-        e753 = 4
+        e750 = (Nsd / NksRd) + (M1sd - Nsd * Zstar) / (Ms1Rd * (1 - Nsd / Ne)) + u
+        e751 = (Nsd / NkpRd) - 2 * (Nsd / Nrd) + (M1sd - Nsd * Zstar) / MpRd * (1 - Nsd / Ne) + u
+        e752 = (Nsd / NksRd) - 2 * (Nsd / Nrd) + (M2sd - Nsd * Zstar) / Mstrd * (1 - Nsd / Ne) + u
+        e753 = (Nsd / NkpRd) + (M2sd - Nsd * Zstar) / MpRd * (1 - Nsd / Ne) + u
 
-        e754 = 5
-        e755 = 6
-        e756 = 7
-        e757 = 8
+        e754 = (Nsd / NksRd) - 2 * (Nsd / Nrd) + (M1sd - Nsd * Zstar) / MstRd * (1 - Nsd / Ne) + u
+        e755 = (Nsd / NkpRd) + (M1sd + Nsd * Zstar) / (MpRd * (1 - Nsd / Ne)) + u
+        e756 = (Nsd / NksRd) + (M2sd - Nsd * Zstar) / (Ms2rd * (1 - Nsd / Ne)) + u
+        e757 = (Nsd / NkpRd) - 2 * (Nsd / Nrd) + (M2sd - Nsd * Zstar) / MpRd * (1 - Nsd / Ne) + u
 
-        TextBox134.Text = Math.Round(e750, 0).ToString
-        TextBox135.Text = Math.Round(e751, 0).ToString
-        TextBox137.Text = Math.Round(e752, 0).ToString
-        TextBox138.Text = Math.Round(e753, 0).ToString
-        TextBox158.Text = Math.Round(e754, 0).ToString
-        TextBox159.Text = Math.Round(e755, 0).ToString
-        TextBox160.Text = Math.Round(e756, 0).ToString
-        TextBox161.Text = Math.Round(e757, 0).ToString
+        '--------------- results ----------------
+        TextBox5.Text = Math.Round(M1sd, 0).ToString
+        TextBox188.Text = Math.Round(M2sd, 0).ToString
+        TextBox190.Text = Math.Round(_l, 0).ToString
+        TextBox189.Text = Math.Round(q_sd, 1).ToString
+        TextBox153.Text = Math.Round(Nsd, 1).ToString
+
+        TextBox134.Text = Math.Round(e750, 2).ToString
+        TextBox135.Text = Math.Round(e751, 2).ToString
+        TextBox137.Text = Math.Round(e752, 2).ToString
+        TextBox138.Text = Math.Round(e753, 2).ToString
+
+        TextBox158.Text = Math.Round(e754, 2).ToString
+        TextBox159.Text = Math.Round(e755, 2).ToString
+        TextBox160.Text = Math.Round(e756, 2).ToString
+        TextBox161.Text = Math.Round(e757, 2).ToString
+
+        '-------- check ---------------
+        TextBox134.BackColor = IIf(e750 <= 1, Color.LightGreen, Color.Red)
+        TextBox135.BackColor = IIf(e751 <= 1, Color.LightGreen, Color.Red)
+        TextBox137.BackColor = IIf(e752 <= 1, Color.LightGreen, Color.Red)
+        TextBox138.BackColor = IIf(e753 <= 1, Color.LightGreen, Color.Red)
+
+        TextBox158.BackColor = IIf(e754 <= 1, Color.LightGreen, Color.Red)
+        TextBox159.BackColor = IIf(e755 <= 1, Color.LightGreen, Color.Red)
+        TextBox160.BackColor = IIf(e756 <= 1, Color.LightGreen, Color.Red)
+        TextBox161.BackColor = IIf(e757 <= 1, Color.LightGreen, Color.Red)
+
     End Sub
     Private Sub DNV_chapter7_73() 'Chapter 7.7.3
         Dim Nrd, Ac, A_s, Sc As Double
+        Dim Ie, iee, Ae, fT As Double
+        Dim Zp, Zt, lk, fet As Double
+        Dim pf, W, Wep, Wes As Double
+
+        Double.TryParse(TextBox115.Text, Ie)
+        Double.TryParse(TextBox103.Text, Zp)
+        Double.TryParse(TextBox102.Text, Zt)
+        Double.TryParse(TextBox116.Text, Ae)
+        Double.TryParse(TextBox87.Text, iee)
+        Double.TryParse(TextBox99.Text, fT)     'SECTION 7.52
+        Double.TryParse(TextBox97.Text, fet)
+
+        ' MessageBox.Show("W=" & W.ToString & ",_fy=" & _fy.ToString & ",L=" & _l.ToString & ",S=" & _S.ToString & ",_Ym=" & _Ym.ToString)
+
+        pf = 12 * W * _fy / (_l ^ 2 * _s * _Ym)           '(equation 7.75)
+        'lk = _l * (1 - 0.5 * Abs(_psd / pf))            '(equation 7.74)
+        lk = _l                                         'equ 7.75 only for simple supported stiffeners DNV_chapter7_51
+
+
+        Wep = Ie / Zp                            '(equation 7.71a)
+        Wes = Ie / Zt
+        W = IIf(Wep < Wes, Wep, Wes)
 
         Nrd = 99
         Ac = 99
         A_s = 99
         Sc = 99
 
+        Wep = Ie / Zp                            '(equation 7.71a)
+        Wes = Ie / Zt
+        W = IIf(Wep < Wes, Wep, Wes)
+
+
+
         TextBox168.Text = Math.Round(Nrd, 0).ToString
         TextBox170.Text = Math.Round(Ac, 0).ToString
         TextBox172.Text = Math.Round(A_s, 0).ToString
-    End Sub
 
-    Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+        TextBox155.Text = Math.Round(Nrd, 0).ToString
+        TextBox156.Text = Math.Round(Ac, 0).ToString
+        TextBox162.Text = Math.Round(A_s, 0).ToString
+
+        TextBox163.Text = Math.Round(Nrd, 0).ToString
+        TextBox164.Text = Math.Round(Ac, 0).ToString
+        TextBox165.Text = Math.Round(A_s, 0).ToString
+        TextBox166.Text = Math.Round(Ac, 0).ToString
+        TextBox167.Text = Math.Round(A_s, 0).ToString
+
+    End Sub
+    Private Sub Button1_Click(sender As Object, e As EventArgs) Handles TabPage1.Enter, NumericUpDown9.ValueChanged, NumericUpDown5.ValueChanged, NumericUpDown4.ValueChanged, NumericUpDown2.ValueChanged, NumericUpDown1.ValueChanged, Button1.Click, NumericUpDown11.ValueChanged
         Calc_sequence()
-
-        TextBox23.Text =
-        "Based on " & vbCrLf &
-        "Recommended Practice DNV-RP-C201, October 2010" & vbCrLf &
-        "Buckling Strength of plated structures" & vbCrLf &
-        "https://rules.dnvgl.com/servicedocuments/dnv" & vbCrLf & vbCrLf &
-        "See also" & vbCrLf &
-        "http://www.steelconstruction.info/Stiffeners"
-
-        TextBox25.Text =
-      vbTab & "Construction steel S235JR" & vbTab & "@ 20c" & vbTab & "235 [N/mm2]" & vbCrLf &
-      vbTab & "Construction steel S355JR" & vbTab & "@ 20c" & vbTab & "335 [N/mm2]" & vbCrLf &
-      vbTab & "Stainless steel 304L" & vbTab & vbTab & "@ 20c" & vbTab & "220 [N/mm2]" & vbCrLf &
-      vbTab & "Stainless steel 316L" & vbTab & vbTab & "@ 20c" & vbTab & "195 [N/mm2]" & vbCrLf &
-       vbTab & "Stainless steel 316L" & vbTab & vbTab & "@ 200c" & vbTab & "152 [N/mm2]"
-
     End Sub
 
+    Private Sub Button2_Click(sender As Object, e As EventArgs) Handles TabPage2.Enter, Button2.Click
+        Calc_sequence()
+    End Sub
+
+    Private Sub Button3_Click(sender As Object, e As EventArgs) Handles Button3.Click, TabPage3.Enter
+        Calc_sequence()
+    End Sub
     Private Sub Button4_Click(sender As Object, e As EventArgs) Handles NumericUpDown7.ValueChanged, NumericUpDown19.ValueChanged, NumericUpDown10.ValueChanged, Button4.Click
         Get_material_data()
-    End Sub
-    Private Sub Get_material_data()
-        Dim pv, G As Double
-
-        fy = NumericUpDown19.Value          'Yield stress
-        E_mod = NumericUpDown7.Value        'Elasticity [N/mm2]
-        Ym = NumericUpDown10.Value          'Safety
-        pv = NumericUpDown17.Value          'Poissons ration
-
-        G = E_mod / (2 * (1 + pv))          'Shear modulus
-        psd = NumericUpDown45.Value / 1000 ^ 2  '[N/mm2]
-
-        _s = NumericUpDown8.Value           'Stiffeners distance
-        _l = NumericUpDown3.Value           'stiffeners length
-        _t = NumericUpDown6.Value           'Plate thickness
-        _gl = NumericUpDown28.Value         'girder length
-
-        NumericUpDown8.BackColor = IIf(_s < _l, Color.Yellow, Color.LightCoral)
-        NumericUpDown3.BackColor = IIf(_s < _l, Color.Yellow, Color.LightCoral)
-
-        TextBox114.Text = Math.Round(G, 0).ToString
-    End Sub
-    Private Sub Stiffener_data()
-        Dim Zp, Zt, hs, ef As Double
-        Dim bf, tf As Double    'Dimensions flange
-        Dim hw, tw As Double    'Dimensions web
-        Dim Ie, Ie1, Ie2, Ae, ie_small_char As Double
-        Dim A1, A2, dY As Double
-        bf = NumericUpDown33.Value          'Flange width
-        tf = NumericUpDown37.Value          'Flange thickness
-        hw = NumericUpDown35.Value          'web height
-        tw = NumericUpDown40.Value          'web thickness
-
-        '----------  Centroid calculation ------------------
-        A1 = bf * tf                        'Cross section area flange
-        A2 = hw * tw                        'Cross section area web
-
-        dY = hw / 2 + tw / 2
-        dY = (dY * A1) / (A1 + A2)
-        TextBox118.Text = Math.Round(dY, 1).ToString
-
-        Zt = hw / 2 + dY
-        Zp = hw / 2 - dY
-
-        hs = hw / 2           '??????????
-        ef = bf / 2
-
-        Ae = A1 + A2        'Effective area
-
-        '----------- Moment of inertia ----------------
-        'Neutral line sits on foot of flange
-        Ie1 = tw * hw ^ 3 / 3   'Web part
-
-        Ie2 = bf * tf ^ 3 / 12  'Flange part
-        Ie2 += A1 * hw ^ 2      'Flange part verschuiving naar buiten
-
-        Ie = Ie1 + Ie2
-
-        ie_small_char = Sqrt(Ie / Ae) 'Effective radius of gyration
-
-        TextBox100.Text = Math.Round(A1, 1).ToString
-        TextBox101.Text = Math.Round(A2, 1).ToString
-        TextBox102.Text = Math.Round(Zt, 1).ToString
-        TextBox103.Text = Math.Round(Zp, 1).ToString
-        TextBox105.Text = Math.Round(hs, 1).ToString
-        TextBox106.Text = Math.Round(ef, 1).ToString
-        TextBox87.Text = Math.Round(ie_small_char, 1).ToString
-        TextBox115.Text = Math.Round(Ie, 0).ToString
-        TextBox116.Text = Math.Round(Ae, 0).ToString
     End Sub
 
     Private Sub Button5_Click(sender As Object, e As EventArgs) Handles RadioButton2.CheckedChanged, RadioButton1.CheckedChanged, NumericUpDown20.VisibleChanged, NumericUpDown20.ValueChanged, NumericUpDown16.ValueChanged, GroupBox13.VisibleChanged, Button5.Click, NumericUpDown25.ValueChanged
@@ -782,10 +857,6 @@ Public Class Form1
         Calc_sequence()
     End Sub
 
-    Private Sub Button3_Click(sender As Object, e As EventArgs) Handles Button3.Click, TabPage3.Enter
-        Calc_sequence()
-    End Sub
-
     Private Sub Button9_Click(sender As Object, e As EventArgs) Handles Button9.Click, TabPage11.Enter
         Calc_sequence()
     End Sub
@@ -797,21 +868,10 @@ Public Class Form1
         Calc_sequence()
     End Sub
 
-    Private Sub Button12_Click(sender As Object, e As EventArgs) Handles Button12.Click, TabPage14.Enter
+    Private Sub Button12_Click(sender As Object, e As EventArgs) Handles Button12.Click, TabPage14.Enter, NumericUpDown12.ValueChanged
         Calc_sequence()
     End Sub
     Private Sub Button13_Click(sender As Object, e As EventArgs) Handles Button13.Click, TabPage15.Click
-        Calc_sequence()
-    End Sub
-    Private Sub Button6_Click(sender As Object, e As EventArgs) Handles NumericUpDown45.ValueChanged, NumericUpDown44.ValueChanged, NumericUpDown43.ValueChanged, NumericUpDown42.ValueChanged, Button6.Click
-        Calc_sequence()
-    End Sub
-
-    Private Sub Button2_Click(sender As Object, e As EventArgs) Handles TabPage2.Enter, Button2.Click
-        Calc_sequence()
-    End Sub
-
-    Private Sub Button1_Click(sender As Object, e As EventArgs) Handles TabPage1.Enter, NumericUpDown9.ValueChanged, NumericUpDown5.ValueChanged, NumericUpDown4.ValueChanged, NumericUpDown2.ValueChanged, NumericUpDown1.ValueChanged, Button1.Click, NumericUpDown11.ValueChanged
         Calc_sequence()
     End Sub
 
@@ -835,7 +895,7 @@ Public Class Form1
 
     End Sub
 
-    Private Sub GroupBox36_Enter(sender As Object, e As EventArgs) Handles GroupBox36.Enter
+    Private Sub GroupBox31_Enter(sender As Object, e As EventArgs) Handles GroupBox31.Enter
 
     End Sub
 End Class
