@@ -788,7 +788,7 @@ Public Class Form1
         Dim Ie, iee, Ae, fT As Double
         Dim Zp, Zt, lk, fet As Double
         Dim pf, W, Wep, Wes As Double
-        Dim Ne As Double
+        Dim Ne, MpRd, MstRd, Ms2Rd, Ms1Rd, fr, fk, NkpRd, NksRd As Double
 
         Double.TryParse(TextBox115.Text, Ie)    '(equation 7.73)
         Double.TryParse(TextBox103.Text, Zp)
@@ -803,7 +803,7 @@ Public Class Form1
         ' MessageBox.Show("W=" & W.ToString & ",_fy=" & _fy.ToString & ",L=" & _l.ToString & ",S=" & _S.ToString & ",_Ym=" & _Ym.ToString)
 
 
-        W = IIf(Wep < Wes, Wep, Wes)
+
         pf = 12 * W * _fy / (_l ^ 2 * _s * _Ym)         '(equation 7.75)
         'lk = _l * (1 - 0.5 * Abs(_psd / pf))           '(equation 7.74)
         lk = _l                                         'equ 7.75 only for simple supported stiffeners DNV_chapter7_51
@@ -812,9 +812,23 @@ Public Class Form1
 
         Wep = Ie / Zp                                   '(equation 7.71a)
         Wes = Ie / Zt
+        W = IIf(Wep < Wes, Wep, Wes)
 
-        Nrd = 99
-        Sc = 99
+        MpRd = Wep * _fy / _Ym              '(equation 7.71)
+        MstRd = Wes * _fy / _Ym             '(equation 7.70)
+
+
+        fr = 99999                          'Section 7.5)
+        Ms2Rd = Wes * fr / _Ym             '(equation 7.69)
+        Ms1Rd = Wes * fr / _Ym             '(equation 7.68)
+
+        fk = 99999
+        NkpRd = Ac * fk / _Ym             '(equation 7.67)
+        NksRd = Ac * fk / _Ym             '(equation 7.66)
+
+        Sc = 999999
+        Nrd = 99999             '(equation 7.65)
+
 
         TextBox176.Text = Math.Round(_l, 0).ToString
         TextBox174.Text = Math.Round(pf, 0).ToString
@@ -822,19 +836,21 @@ Public Class Form1
         TextBox173.Text = Math.Round(lk, 0).ToString
         TextBox171.Text = Math.Round(iee, 0).ToString
         TextBox167.Text = Math.Round(Ne, 0).ToString
-
-
-        Ac = 0
         TextBox170.Text = Math.Round(Ac, 0).ToString
-        TextBox172.Text = Math.Round(Ac, 0).ToString
-        TextBox155.Text = Math.Round(Ac, 0).ToString
-        TextBox156.Text = Math.Round(Ac, 0).ToString
-        TextBox162.Text = Math.Round(Ac, 0).ToString
-        TextBox163.Text = Math.Round(Ac, 0).ToString
-        TextBox164.Text = Math.Round(Ac, 0).ToString
-        TextBox165.Text = Math.Round(Ac, 0).ToString
-        TextBox166.Text = Math.Round(Ac, 0).ToString
+        TextBox172.Text = Math.Round(A_s, 0).ToString
+        TextBox175.Text = Math.Round(Wes, 0).ToString
+        TextBox168.Text = Math.Round(Wep, 0).ToString
+        TextBox191.Text = Math.Round(W, 0).ToString
+        TextBox166.Text = Math.Round(MpRd, 0).ToString
+        TextBox165.Text = Math.Round(MstRd, 0).ToString
+        TextBox164.Text = Math.Round(Ms2Rd, 0).ToString
+        TextBox163.Text = Math.Round(Ms1Rd, 0).ToString
+        TextBox162.Text = Math.Round(NkpRd, 0).ToString
 
+        TextBox156.Text = Math.Round(NksRd, 0).ToString
+        Ac = 0
+
+        TextBox155.Text = Math.Round(Ac, 0).ToString
     End Sub
     Private Sub Button1_Click(sender As Object, e As EventArgs) Handles TabPage1.Enter, NumericUpDown9.ValueChanged, NumericUpDown5.ValueChanged, NumericUpDown4.ValueChanged, NumericUpDown2.ValueChanged, NumericUpDown1.ValueChanged, Button1.Click, NumericUpDown11.ValueChanged
         Calc_sequence()
