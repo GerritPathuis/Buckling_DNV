@@ -81,7 +81,7 @@ Public Class Form1
         hs = hw / 2           '??????????
         ef = bf / 2
 
-        Ae = A1 + A2        'Effective area
+        Ae = A1 + A2 + A3     'Effective area (eq 7.65)
 
         '----------- Moment of inertia ----------------
         'Neutral line sits on foot of flange
@@ -98,6 +98,7 @@ Public Class Form1
         TextBox101.Text = Math.Round(A2, 0).ToString
         TextBox192.Text = Math.Round(A1 + A2, 0).ToString
         TextBox193.Text = Math.Round(A3, 1).ToString
+        TextBox201.Text = Math.Round(Ae, 0).ToString
 
         TextBox102.Text = Math.Round(Zt, 1).ToString
         TextBox103.Text = Math.Round(Zp, 1).ToString
@@ -105,7 +106,6 @@ Public Class Form1
         TextBox106.Text = Math.Round(ef, 1).ToString
         TextBox87.Text = Math.Round(ie_small_char, 1).ToString
         TextBox115.Text = Math.Round(Ie, 0).ToString
-        TextBox116.Text = Math.Round(Ae, 0).ToString
     End Sub
 
     Private Sub Calc_weight_and_loads()
@@ -170,7 +170,7 @@ Public Class Form1
 
         sigma_Xsd = NumericUpDown43.Value
         sigma_Ysd = NumericUpDown42.Value
-        tau_sd = NumericUpDown44.Value
+        tau_sd = NumericUpDown44.Value  'Design shear stress
 
         'Calc Von misses (equation 5.4)
         sigma_Jsd = Math.Sqrt(sigma_Xsd ^ 2 + sigma_Ysd ^ 2 - sigma_Xsd * sigma_Ysd + 3 * tau_sd ^ 2)
@@ -379,7 +379,7 @@ Public Class Form1
         sigma_Xsd = NumericUpDown16.Value   'design stress axial stress in plate and stiffener
         sigma_Y1sd = NumericUpDown25.Value  'design stress transverse direction
         tau_tf = NumericUpDown20.Value      'shear sress in plate and stiffener
-        Double.TryParse(TextBox116.Text, A_s) 'Area cross sectional stiffener
+        Double.TryParse(TextBox192.Text, A_s) 'Area cross sectional stiffener
 
         'Moment of inertia stiffener+plate
         Dim I_stif, I_plate As Double
@@ -490,9 +490,9 @@ Public Class Form1
         Double.TryParse(TextBox24.Text, sigma_YRd)      'equation 6.5
         tau_sd = NumericUpDown44.Value
 
-        K_sp = Sqrt(1 - 3 * (tau_sd / _fy) ^ 2)          'equation 7.20
+        K_sp = Sqrt(1 - 3 * (tau_sd / _fy) ^ 2)         'equation 7.20
         KspsigmaYrd = K_sp * sigma_YRd                  'equation 7.19
-        tau_rd = _fy / ((Sqrt(3) * _Ym))                  'equation 7.18
+        tau_rd = _fy / ((Sqrt(3) * _Ym))                'equation 7.18
 
         TextBox70.Text = Math.Round(sigma_YRd, 0).ToString
         TextBox71.Text = Math.Round(K_sp, 3).ToString
@@ -501,14 +501,13 @@ Public Class Form1
         TextBox74.Text = Math.Round(KspsigmaYrd, 0).ToString
     End Sub
     Private Sub DNV_chapter7_51()  'General
-        Dim mu1, mu2, Ie, iee, Ae, fe, fr, fT, lambda, lambdaT, fk_fr As Double
+        Dim mu1, mu2, Ie, iee, fe, fr, fT, fk, fk_fr, lambda, lambdaT As Double
         Dim Zp, Zt, lk, fet As Double
         Dim pf, W, Wep, Wes As Double
 
         Double.TryParse(TextBox115.Text, Ie)
         Double.TryParse(TextBox103.Text, Zp)
         Double.TryParse(TextBox102.Text, Zt)
-        Double.TryParse(TextBox116.Text, Ae)
         Double.TryParse(TextBox87.Text, iee)     'equation 7.73
         Double.TryParse(TextBox99.Text, fT)         'SECTION 7.52
         Double.TryParse(TextBox97.Text, fet)
@@ -540,6 +539,8 @@ Public Class Form1
             fk_fr /= 2 * lambda ^ 2
         End If
 
+        fk = fk_fr * fr
+
         TextBox76.Text = Math.Round(mu1, 2).ToString("f2")
         TextBox75.Text = Math.Round(mu2, 2).ToString("f2")
         TextBox77.Text = Math.Round(fe, 0).ToString
@@ -557,6 +558,7 @@ Public Class Form1
         TextBox125.Text = Math.Round(Wep, 0).ToString
         TextBox126.Text = Math.Round(_l, 0).ToString
         TextBox127.Text = Math.Round(fr, 0).ToString
+        TextBox197.Text = Math.Round(fk, 0).ToString
 
         If lambda <= 0.6 Then Label305.Text = "Note: this is a Slender structure"
         If lambda > 0.6 And lambda < 1.4 Then Label305.Text = "Note: this is Moderate slender structure"
@@ -666,6 +668,9 @@ Public Class Form1
         TextBox112.Text = Math.Round(lambdaT, 1).ToString
         TextBox113.Text = Math.Round(mu, 1).ToString
         TextBox99.Text = Math.Round(fT, 1).ToString
+
+        '-------- check ---------------
+        TextBox92.BackColor = IIf(Sigma_JSd <= _fy / _Ym, Color.LightGreen, Color.Red)
     End Sub
     Private Sub DNV_chapter7_6()
 
@@ -687,7 +692,7 @@ Public Class Form1
         tau_crs /= (_s * _t * _l ^ 2)
         tau_crs *= (Ip * Iss ^ 3) ^ 0.25            'eq 7.48
 
-        tau_RdY = _fy / (Sqrt(3) * _Ym)               'eq 7.45
+        tau_RdY = _fy / (Sqrt(3) * _Ym)              'eq 7.45
         tau_Rdl = tau_crl / _Ym                      'eq 7.46
         tau_Rds = tau_crs / _Ym                      'eq 7.47
 
@@ -724,22 +729,20 @@ Public Class Form1
         Dim q_sd, M1sd, Ms1Rd, Ms2rd, MstRd, MpRd, M2sd As Double
         Dim Nsd, Nrd, Ne, NksRd, NkpRd, Zstar As Double
 
-
-        tau_sd = 999
-        tau_Rd = 888
+        tau_sd = NumericUpDown44.Value
         Zstar = NumericUpDown12.Value
 
-        Ne = 999        'equation 7.73
-        Nrd = 999
-        Ms1Rd = 999
-        Ms2rd = 999
-        NkpRd = 999
-        NksRd = 9999
-        MpRd = 999
-
-        Double.TryParse(TextBox40.Text, Nsd)   'equation 7.8
-        Double.TryParse(TextBox26.Text, q_sd)   'equation 7.8
-        u = (tau_sd / tau_Rd) ^ 2               'equation 7.58
+        Double.TryParse(TextBox167.Text, Ne)        'equation 7.73
+        Double.TryParse(TextBox155.Text, Nrd)       'equation 7.65
+        Double.TryParse(TextBox163.Text, Ms1Rd)     'equation 7.68
+        Double.TryParse(TextBox163.Text, Ms2rd)     'equation 7.69
+        Double.TryParse(TextBox162.Text, NkpRd)     'equation 7.67
+        Double.TryParse(TextBox156.Text, NksRd)     'equation 7.66
+        Double.TryParse(TextBox166.Text, MpRd)      'equation 7.71
+        Double.TryParse(TextBox40.Text, Nsd)        'equation 7.8
+        Double.TryParse(TextBox26.Text, q_sd)       'equation 7.8
+        Double.TryParse(TextBox73.Text, tau_Rd)     'equation 7.18
+        u = (tau_sd / tau_Rd) ^ 2                   'equation 7.58
 
         M1sd = q_sd * _l / 12
         M2sd = q_sd * _l / 24
@@ -754,12 +757,17 @@ Public Class Form1
         e756 = (Nsd / NksRd) + (M2sd - Nsd * Zstar) / (Ms2rd * (1 - Nsd / Ne)) + u
         e757 = (Nsd / NkpRd) - 2 * (Nsd / Nrd) + (M2sd - Nsd * Zstar) / MpRd * (1 - Nsd / Ne) + u
 
+
+        TextBox198.Text = Math.Round(tau_sd, 1).ToString
+        TextBox199.Text = Math.Round(tau_Rd, 0).ToString    'equation 7.18
+
         '--------------- results ----------------
         TextBox5.Text = Math.Round(M1sd, 0).ToString
         TextBox188.Text = Math.Round(M2sd, 0).ToString
         TextBox190.Text = Math.Round(_l, 0).ToString
         TextBox189.Text = Math.Round(q_sd, 1).ToString
         TextBox153.Text = Math.Round(Nsd, 1).ToString
+        TextBox154.Text = Math.Round(Ne, 1).ToString
 
         TextBox134.Text = Math.Round(e750, 2).ToString
         TextBox135.Text = Math.Round(e751, 2).ToString
@@ -770,6 +778,7 @@ Public Class Form1
         TextBox159.Text = Math.Round(e755, 2).ToString
         TextBox160.Text = Math.Round(e756, 2).ToString
         TextBox161.Text = Math.Round(e757, 2).ToString
+
 
         '-------- check ---------------
         TextBox134.BackColor = IIf(e750 <= 1, Color.LightGreen, Color.Red)
@@ -784,8 +793,8 @@ Public Class Form1
 
     End Sub
     Private Sub DNV_chapter7_73() 'Chapter 7.7.3
-        Dim Nrd, Ac, A_s, Se As Double
-        Dim Ie, iee, Ae, fT As Double
+        Dim Nrd, Ae, A_s, Se As Double
+        Dim Ie, iee, fT As Double
         Dim Zp, Zt, lk, fet As Double
         Dim pf, W, Wep, Wes As Double
         Dim Ne, MpRd, MstRd, Ms2Rd, Ms1Rd, fr, fk, NkpRd, NksRd As Double
@@ -793,16 +802,12 @@ Public Class Form1
         Double.TryParse(TextBox115.Text, Ie)    '(equation 7.73)
         Double.TryParse(TextBox103.Text, Zp)
         Double.TryParse(TextBox102.Text, Zt)
-        Double.TryParse(TextBox116.Text, Ae)
-        Double.TryParse(TextBox87.Text, iee)     '(equation 7.72)
+        Double.TryParse(TextBox201.Text, Ae)    'Effective area
+        Double.TryParse(TextBox87.Text, iee)    '(equation 7.72)
         Double.TryParse(TextBox99.Text, fT)     'SECTION 7.52
         Double.TryParse(TextBox97.Text, fet)
         Double.TryParse(TextBox192.Text, A_s)   'Area stiffener
-        Double.TryParse(TextBox193.Text, Ac)   'Area stiffener + plate
-        Double.TryParse(TextBox127.Text, fr)    'Characteristic strength
-
-
-        ' MessageBox.Show("W=" & W.ToString & ",_fy=" & _fy.ToString & ",L=" & _l.ToString & ",S=" & _S.ToString & ",_Ym=" & _Ym.ToString)
+        Double.TryParse(TextBox127.Text, fr)    'Characteristic strength (Section 7.5)
 
         Wep = Ie / Zp                                   '(equation 7.71a)
         Wes = Ie / Zt
@@ -812,18 +817,18 @@ Public Class Form1
         'lk = _l * (1 - 0.5 * Abs(_psd / pf))           '(equation 7.74)
         lk = _l                                         'equ 7.75 only for simple supported stiffeners DNV_chapter7_51
 
-        Ne = PI ^ 2 * _E_mod * Ac / (lk / iee) ^ 2       '(equation 7.72)
+        Ne = PI ^ 2 * _E_mod * Ae / (lk / iee) ^ 2     '(equation 7.72)
 
         MpRd = Wep * _fy / _Ym              '(equation 7.71)
         MstRd = Wes * _fy / _Ym             '(equation 7.70)
 
-        fr = 99999                          'Section 7.5
         Ms2Rd = Wes * fr / _Ym              '(equation 7.69)
         Ms1Rd = Wes * fr / _Ym              '(equation 7.68)
 
-        fk = 99999                          '(equation 7.26)
-        NkpRd = Ac * fk / _Ym               '(equation 7.67)
-        NksRd = Ac * fk / _Ym               '(equation 7.66)
+        Double.TryParse(TextBox197.Text, fk) '(equation 7.26)
+
+        NkpRd = Ae * fk / _Ym               '(equation 7.67)
+        NksRd = Ae * fk / _Ym               '(equation 7.66)
 
         Double.TryParse(TextBox49.Text, Se) 'Section 7.3
 
@@ -833,10 +838,8 @@ Public Class Form1
         TextBox174.Text = Math.Round(pf, 1).ToString
         TextBox175.Text = Math.Round(W, 0).ToString
         TextBox173.Text = Math.Round(lk, 0).ToString
-        TextBox171.Text = Math.Round(iee, 0).ToString
+        TextBox171.Text = Math.Round(iee, 1).ToString
         TextBox167.Text = Math.Round(Ne, 0).ToString
-        TextBox170.Text = Math.Round(Ac, 0).ToString
-        TextBox172.Text = Math.Round(A_s, 0).ToString
         TextBox175.Text = Math.Round(Wes, 0).ToString
         TextBox168.Text = Math.Round(Wep, 0).ToString
         TextBox191.Text = Math.Round(W, 0).ToString
@@ -850,6 +853,8 @@ Public Class Form1
         TextBox194.Text = Math.Round(Se, 0).ToString
         TextBox195.Text = Math.Round(fr, 0).ToString
         TextBox196.Text = Math.Round(fk, 0).ToString
+        TextBox200.Text = Math.Round(Ae, 0).ToString
+        TextBox116.Text = Math.Round(Ie, 0).ToString
     End Sub
     Private Sub Button1_Click(sender As Object, e As EventArgs) Handles TabPage1.Enter, NumericUpDown9.ValueChanged, NumericUpDown5.ValueChanged, NumericUpDown4.ValueChanged, NumericUpDown2.ValueChanged, NumericUpDown1.ValueChanged, Button1.Click, NumericUpDown11.ValueChanged
         Calc_sequence()
@@ -916,7 +921,4 @@ Public Class Form1
 
     End Sub
 
-    Private Sub GroupBox35_Enter(sender As Object, e As EventArgs) Handles GroupBox35.Enter
-
-    End Sub
 End Class
