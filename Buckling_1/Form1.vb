@@ -501,68 +501,87 @@ Public Class Form1
         TextBox74.Text = Math.Round(KspsigmaYrd, 0).ToString
     End Sub
     Private Sub DNV_chapter7_51()  'General
-        Dim mu1, mu2, Ie, iee, fe, fr, fT, fk, fk_fr, lambda, lambdaT As Double
+        Dim mu1, mu2, Ie, iee, fT, lambdaT As Double
+        Dim fr1, fe1, fk1, fkfr1, lambda1 As Double    'plate side
+        Dim fr2, fe2, fk2, fkfr2, lambda2 As Double    'stiffener side
         Dim Zp, Zt, lk, fet As Double
-        Dim pf, W, Wep, Wes As Double
+        Dim W, Wep, Wes As Double
 
         Double.TryParse(TextBox115.Text, Ie)
         Double.TryParse(TextBox103.Text, Zp)
         Double.TryParse(TextBox102.Text, Zt)
         Double.TryParse(TextBox87.Text, iee)     'equation 7.73
-        Double.TryParse(TextBox99.Text, fT)         'SECTION 7.52
+        Double.TryParse(TextBox99.Text, fT)      'SECTION 7.52
         Double.TryParse(TextBox97.Text, fet)
 
-        Wep = Ie / Zp                            '(equation 7.71a)
-        Wes = Ie / Zt
-        W = IIf(Wep < Wes, Wep, Wes)
+        Double.TryParse(TextBox168.Text, Wep)       '(equation 7.71a)
+        Double.TryParse(TextBox175.Text, Wes)       '(equation 7.71a)
+        Double.TryParse(TextBox191.Text, W)         '(equation 7.71a)
+        Double.TryParse(TextBox112.Text, lambdaT)   '(equation 7.30)
+        Double.TryParse(TextBox173.Text, lk)    '(equation 7.74-7.75)
 
-        ' MessageBox.Show("W=" & W.ToString & ",_fy=" & _fy.ToString & ",L=" & _l.ToString & ",S=" & _S.ToString & ",_Ym=" & _Ym.ToString)
-        pf = 12 * W * _fy / (_l ^ 2 * _s * _Ym)           '(equation 7.75)
-        'lk = _l * (1 - 0.5 * Abs(_psd / pf))            '(equation 7.74)
-        lk = _l                                         'equ 7.75 only for simple supported stiffeners DNV_chapter7_51
+        '============================= Plate side=======================
+        fr1 = _fy
+        fe1 = PI ^ 2 * _E_mod * (iee / lk) ^ 2              'equation 7.24
+        lambda1 = Sqrt(fr1 / fe1)                            'equation 7.23
+        mu1 = (0.34 + 0.08 * Zt / iee) * (lambda1 - 0.2)     'equation 7.26
 
-        lambdaT = Sqrt(_fy / fet)                        '(equation 7.30)
-        'fr = _fy                 'Plate side  MOET NOG UITGEWERKT WORDEN
-
-        fr = IIf(lambdaT <= 0.6, _fy, fT)
-        fe = PI ^ 2 * _E_mod * (iee / lk) ^ 2            'equation 7.24
-        lambda = Sqrt(fr / fe)                          'equation 7.23
-
-        If lambda <= 0.2 Then       '========== Lambda <= 0.2======
-            fk_fr = 1                                           'equation 7.21
+        If lambda1 <= 0.2 Then       '========== Lambda <= 0.2======
+            fkfr1 = 1                                       'equation 7.21
         Else                        '========== Lambda > 0.2======
-            mu1 = (0.34 + 0.08 * Zt / iee) * (lambda - 0.2)     'equation 7.26
-            mu2 = (0.34 + 0.08 * Zp / iee) * (lambda - 0.2)     'equation 7.25
+            fkfr1 = 1 + mu1 + lambda1 ^ 2                   'equation 7.22 
+            fkfr1 -= Sqrt((1 + mu1 + lambda1 ^ 2) ^ 2 - 4 * lambda1 ^ 2)
+            fkfr1 /= 2 * lambda1 ^ 2
 
-            fk_fr = 1 + mu1 + lambda ^ 2           'equation 7.22 (opgelet mu-mu1,mu2 ??)
-            fk_fr -= Sqrt((1 + mu1 + lambda ^ 2) ^ 2 - 4 * lambda ^ 2)
-            fk_fr /= 2 * lambda ^ 2
+        End If
+        fk1 = fkfr1 * fr1
+
+        '============================= Stiffener side===================
+        fr2 = IIf(lambdaT <= 0.6, _fy, fT)
+        fe2 = PI ^ 2 * _E_mod * (iee / lk) ^ 2            'equation 7.24
+        lambda2 = Sqrt(fr2 / fe2)                          'equation 7.23
+        mu2 = (0.34 + 0.08 * Zp / iee) * (lambda2 - 0.2)    'equation 7.25
+
+        If lambda2 <= 0.2 Then       '========== Lambda <= 0.2======
+            fkfr2 = 1                                     'equation 7.21
+        Else
+            fkfr2 = 1 + mu2 + lambda2 ^ 2               'equation 7.22 
+            fkfr2 -= Sqrt((1 + mu2 + lambda2 ^ 2) ^ 2 - 4 * lambda2 ^ 2)
+            fkfr2 /= 2 * lambda2 ^ 2
         End If
 
-        fk = fk_fr * fr
+        fk2 = fkfr2 * fr2
 
-        TextBox76.Text = Math.Round(mu1, 2).ToString("f2")
-        TextBox75.Text = Math.Round(mu2, 2).ToString("f2")
-        TextBox77.Text = Math.Round(fe, 0).ToString
-        TextBox78.Text = Math.Round(lambda, 3).ToString
-        TextBox79.Text = Math.Round(fk_fr, 2).ToString("f2")
+        '-----------present resultaten---------------
         TextBox85.Text = Math.Round(lambdaT, 2).ToString
         TextBox86.Text = Math.Round(lk, 2).ToString
         TextBox88.Text = Math.Round(fT, 2).ToString
         TextBox119.Text = Math.Round(Zp, 3).ToString
         TextBox117.Text = Math.Round(Zt, 3).ToString
-        TextBox121.Text = Math.Round(pf, 3).ToString
         TextBox122.Text = Math.Round(W, 0).ToString
         TextBox123.Text = Math.Round(Ie, 0).ToString
         TextBox124.Text = Math.Round(Wes, 0).ToString
         TextBox125.Text = Math.Round(Wep, 0).ToString
         TextBox126.Text = Math.Round(_l, 0).ToString
-        TextBox127.Text = Math.Round(fr, 0).ToString
-        TextBox197.Text = Math.Round(fk, 0).ToString
+        TextBox78.Text = Math.Round(lambda1, 3).ToString
 
-        If lambda <= 0.6 Then Label305.Text = "Note: this is a Slender structure"
-        If lambda > 0.6 And lambda < 1.4 Then Label305.Text = "Note: this is Moderate slender structure"
-        If lambda >= 1.4 Then Label305.Text = "Note: this is a Stocky structure"
+        '-------------plate side--------------------
+        TextBox170.Text = Math.Round(fr1, 2).ToString
+        TextBox77.Text = Math.Round(fe1, 0).ToString
+        TextBox75.Text = Math.Round(mu1, 2).ToString("f2")
+        TextBox79.Text = Math.Round(fkfr1, 2).ToString("f2")
+        TextBox172.Text = Math.Round(fk1, 0).ToString
+
+        '-------------stiffener side-----------------
+        TextBox127.Text = Math.Round(fr2, 2).ToString
+        TextBox121.Text = Math.Round(fe2, 0).ToString
+        TextBox76.Text = Math.Round(mu2, 2).ToString("f2")
+        TextBox202.Text = Math.Round(fkfr2, 2).ToString("f2")
+        TextBox197.Text = Math.Round(fk2, 0).ToString
+
+        If lambda1 <= 0.6 Then Label305.Text = "Note: this is a Slender structure"
+        If lambda1 > 0.6 And lambda1 < 1.4 Then Label305.Text = "Note: this is Moderate slender structure"
+        If lambda1 >= 1.4 Then Label305.Text = "Note: this is a Stocky structure"
     End Sub
 
     Private Sub DNV_chapter7_52()
@@ -594,12 +613,12 @@ Public Class Form1
 
         Sigma_JSd = Math.Sqrt(sigma_Xsd ^ 2 + sigma_Ysd ^ 2 - sigma_Xsd * sigma_Ysd + 3 * tau_sd ^ 2) 'equation 7.38
 
-        F_Ept = 5.0 * _E_mod * (_t / _s) ^ 2       'equation 7.44
-        F_Epy = 0.9 * _E_mod * (_t / _s) ^ 2       'equation 7.43
-        F_Epx = 3.62 * _E_mod * (_t / _s) ^ 2      'equation 7.42
-        c = 2 - (_s / _l)                    'equation 7.41
+        F_Ept = 5.0 * _E_mod * (_t / _s) ^ 2        'equation 7.44
+        F_Epy = 0.9 * _E_mod * (_t / _s) ^ 2        'equation 7.43
+        F_Epx = 3.62 * _E_mod * (_t / _s) ^ 2       'equation 7.42
+        c = 2 - (_s / _l)                           'equation 7.41
 
-        lambda_e = (tau_sd / F_Ept) ^ c         'equation 7.40
+        lambda_e = (tau_sd / F_Ept) ^ c             'equation 7.40
         lambda_e += (sigma_Ysd / F_Epy) ^ c
         lambda_e += (sigma_Xsd / F_Epx) ^ c
         lambda_e = lambda_e ^ (1 / c)
@@ -607,26 +626,26 @@ Public Class Form1
         lambda_e *= _fy / Sigma_JSd
         lambda_e = lambda_e ^ -0.5
 
-        F_ep = _fy / Sqrt(1 + lambda_e ^ -4)     'equation 7.39
+        F_ep = _fy / Sqrt(1 + lambda_e ^ -4)        'equation 7.39
 
-        eta = Sigma_JSd / F_ep                  'equation 7.37
+        eta = Sigma_JSd / F_ep                       'equation 7.37
         If eta > 1 Then eta = 1
 
-        CC = hw / _s * (_t / tw) ^ 3 * Sqrt(1 - eta)  'equation 7.36
+        CC = hw / _s * (_t / tw) ^ 3 * Sqrt(1 - eta)    'equation 7.36
 
-        beta = (3 * CC + 0.2) / (CC + 0.2)          'equation 7.35
+        beta = (3 * CC + 0.2) / (CC + 0.2)              'equation 7.35
 
         '--------- For NOW just flat bar-----------------
         F_ET = beta + 2 * (hw / lT) ^ 2             'equation 7.34 (Flat bar)
         F_ET *= _G * (tw / hw) ^ 2
 
-        lambdaT = Sqrt(_fy / F_ET)                   'equation 7.30
+        lambdaT = Sqrt(_fy / F_ET)                  'equation 7.30
 
         mu = 0.35 * (lambdaT - 0.6)                 'equation 7.29
         '---------------------------------------------------
 
         If lambdaT <= 0.6 Then
-            fT = 1.0 * _fy                           'equation 7.27
+            fT = 1.0 * _fy                          'equation 7.27
         Else
             fT = 1 + mu + lambdaT ^ 2               'equation 7.28
             fT -= Sqrt((1 + mu + lambdaT ^ 2) ^ 2 - 4 * lambdaT ^ 2)
@@ -637,7 +656,7 @@ Public Class Form1
         Af = hw * tw + b * tf                       'Cross section area flange
         Aw = b * tf                                 'Cross section area web
 
-        'Iz = 1 / 12 * Af * beta ^ 2                 'equation 7.33
+        'Iz = 1 / 12 * Af * beta ^ 2                'equation 7.33
         'Iz += ef ^ 2 * Af / (1 + Af / Aw)
 
         'F_ET = PI ^ 2 * _E_mod * Iz / ((Aw / 3 + Af) * lT ^ 2)    'equation 7.32
@@ -719,7 +738,6 @@ Public Class Form1
         TextBox143.BackColor = IIf(tau_Rds >= tau_sd, Color.LightGreen, Color.Red)
         TextBox144.BackColor = IIf(tau_Rdl >= tau_sd, Color.LightGreen, Color.Red)
         TextBox136.BackColor = IIf(tau_RdY >= tau_sd, Color.LightGreen, Color.Red)
-
     End Sub
     Private Sub DNV_chapter7_71()
         Dim u As Double
@@ -779,7 +797,6 @@ Public Class Form1
         TextBox160.Text = Math.Round(e756, 2).ToString
         TextBox161.Text = Math.Round(e757, 2).ToString
 
-
         '-------- check ---------------
         TextBox134.BackColor = IIf(e750 <= 1, Color.LightGreen, Color.Red)
         TextBox135.BackColor = IIf(e751 <= 1, Color.LightGreen, Color.Red)
@@ -797,7 +814,7 @@ Public Class Form1
         Dim Ie, iee, fT As Double
         Dim Zp, Zt, lk, fet As Double
         Dim pf, W, Wep, Wes As Double
-        Dim Ne, MpRd, MstRd, Ms2Rd, Ms1Rd, fr, fk, NkpRd, NksRd As Double
+        Dim Ne, MpRd, MstRd, Ms2Rd, Ms1Rd, fr, fk_eq725, fk_eq726, NkpRd, NksRd As Double
 
         Double.TryParse(TextBox115.Text, Ie)    '(equation 7.73)
         Double.TryParse(TextBox103.Text, Zp)
@@ -808,8 +825,10 @@ Public Class Form1
         Double.TryParse(TextBox97.Text, fet)
         Double.TryParse(TextBox192.Text, A_s)   'Area stiffener
         Double.TryParse(TextBox127.Text, fr)    'Characteristic strength (Section 7.5)
+        Double.TryParse(TextBox197.Text, fk_eq726) '(equation 7.26) stiffener side
+        Double.TryParse(TextBox172.Text, fk_eq725) '(equation 7.25) plate side
 
-        Wep = Ie / Zp                                   '(equation 7.71a)
+        Wep = Ie / Zp                           '(equation 7.71a)
         Wes = Ie / Zt
         W = IIf(Wep < Wes, Wep, Wes)
 
@@ -825,10 +844,8 @@ Public Class Form1
         Ms2Rd = Wes * fr / _Ym              '(equation 7.69)
         Ms1Rd = Wes * fr / _Ym              '(equation 7.68)
 
-        Double.TryParse(TextBox197.Text, fk) '(equation 7.26)
-
-        NkpRd = Ae * fk / _Ym               '(equation 7.67)
-        NksRd = Ae * fk / _Ym               '(equation 7.66)
+        NkpRd = Ae * fk_eq726 / _Ym               '(equation 7.67)
+        NksRd = Ae * fk_eq725 / _Ym               '(equation 7.66)
 
         Double.TryParse(TextBox49.Text, Se) 'Section 7.3
 
@@ -839,20 +856,20 @@ Public Class Form1
         TextBox175.Text = Math.Round(W, 0).ToString
         TextBox173.Text = Math.Round(lk, 0).ToString
         TextBox171.Text = Math.Round(iee, 1).ToString
-        TextBox167.Text = Math.Round(Ne, 0).ToString
+        TextBox167.Text = Math.Round(Ne / 1000, 0).ToString    '[N]->[kN]
         TextBox175.Text = Math.Round(Wes, 0).ToString
         TextBox168.Text = Math.Round(Wep, 0).ToString
         TextBox191.Text = Math.Round(W, 0).ToString
-        TextBox166.Text = Math.Round(MpRd, 0).ToString
-        TextBox165.Text = Math.Round(MstRd, 0).ToString
-        TextBox164.Text = Math.Round(Ms2Rd, 0).ToString
-        TextBox163.Text = Math.Round(Ms1Rd, 0).ToString
-        TextBox162.Text = Math.Round(NkpRd, 0).ToString
-        TextBox156.Text = Math.Round(NksRd, 0).ToString
-        TextBox155.Text = Math.Round(Nrd, 0).ToString
+        TextBox166.Text = Math.Round(MpRd / 1000, 0).ToString  '[N.mm]->[N.m]
+        TextBox165.Text = Math.Round(MstRd / 1000, 0).ToString '[N.mm]->[N.m]
+        TextBox164.Text = Math.Round(Ms2Rd / 1000, 0).ToString '[N.mm]->[N.m]
+        TextBox163.Text = Math.Round(Ms1Rd / 1000, 0).ToString '[N.mm]->[N.m]
+        TextBox162.Text = Math.Round(NkpRd / 1000, 0).ToString '[N]->[kN]
+        TextBox156.Text = Math.Round(NksRd / 1000, 0).ToString '[N]->[kN]
+        TextBox155.Text = Math.Round(Nrd / 1000, 0).ToString   '[N]->[kN]
         TextBox194.Text = Math.Round(Se, 0).ToString
         TextBox195.Text = Math.Round(fr, 0).ToString
-        TextBox196.Text = Math.Round(fk, 0).ToString
+        TextBox196.Text = Math.Round(fk_eq726, 0).ToString
         TextBox200.Text = Math.Round(Ae, 0).ToString
         TextBox116.Text = Math.Round(Ie, 0).ToString
     End Sub
@@ -921,4 +938,11 @@ Public Class Form1
 
     End Sub
 
+    Private Sub GroupBox22_Enter(sender As Object, e As EventArgs) Handles GroupBox22.Enter
+
+    End Sub
+
+    Private Sub Label195_Click(sender As Object, e As EventArgs) Handles Label195.Click
+
+    End Sub
 End Class
