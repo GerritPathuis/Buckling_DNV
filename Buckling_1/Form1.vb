@@ -753,10 +753,12 @@ Public Class Form1
         Double.TryParse(TextBox167.Text, Ne)        'equation 7.73
         Double.TryParse(TextBox155.Text, Nrd)       'equation 7.65
         Double.TryParse(TextBox163.Text, Ms1Rd)     'equation 7.68
-        Double.TryParse(TextBox163.Text, Ms2rd)     'equation 7.69
+        Double.TryParse(TextBox164.Text, Ms2rd)     'equation 7.69
+        Double.TryParse(TextBox165.Text, MstRd)     'equation 7.70
+        Double.TryParse(TextBox166.Text, MpRd)      'equation 7.71
         Double.TryParse(TextBox162.Text, NkpRd)     'equation 7.67
         Double.TryParse(TextBox156.Text, NksRd)     'equation 7.66
-        Double.TryParse(TextBox166.Text, MpRd)      'equation 7.71
+
         Double.TryParse(TextBox40.Text, Nsd)        'equation 7.8
         Double.TryParse(TextBox26.Text, q_sd)       'equation 7.8
         Double.TryParse(TextBox73.Text, tau_Rd)     'equation 7.18
@@ -778,23 +780,27 @@ Public Class Form1
         TextBox198.Text = Math.Round(tau_sd, 1).ToString
         TextBox199.Text = Math.Round(tau_Rd, 0).ToString    'equation 7.18
 
+
         '--------------- results ----------------
         TextBox5.Text = Math.Round(M1sd, 0).ToString
         TextBox188.Text = Math.Round(M2sd, 0).ToString
+        TextBox145.Text = Math.Round(MstRd, 0).ToString
+        TextBox152.Text = Math.Round(MpRd, 0).ToString
         TextBox190.Text = Math.Round(_l, 0).ToString
         TextBox189.Text = Math.Round(q_sd, 1).ToString
         TextBox153.Text = Math.Round(Nsd, 1).ToString
         TextBox154.Text = Math.Round(Ne, 1).ToString
+        TextBox139.Text = Math.Round(Nrd, 0).ToString       'equation 7.65
 
-        TextBox134.Text = Math.Round(e750, 2).ToString
-        TextBox135.Text = Math.Round(e751, 2).ToString
-        TextBox137.Text = Math.Round(e752, 2).ToString
-        TextBox138.Text = Math.Round(e753, 2).ToString
+        TextBox134.Text = Math.Round(e750, 3).ToString
+        TextBox135.Text = Math.Round(e751, 3).ToString
+        TextBox137.Text = Math.Round(e752, 3).ToString
+        TextBox138.Text = Math.Round(e753, 3).ToString
 
-        TextBox158.Text = Math.Round(e754, 2).ToString
-        TextBox159.Text = Math.Round(e755, 2).ToString
-        TextBox160.Text = Math.Round(e756, 2).ToString
-        TextBox161.Text = Math.Round(e757, 2).ToString
+        TextBox158.Text = Math.Round(e754, 3).ToString
+        TextBox159.Text = Math.Round(e755, 3).ToString
+        TextBox160.Text = Math.Round(e756, 3).ToString
+        TextBox161.Text = Math.Round(e757, 3).ToString
 
         '-------- check ---------------
         TextBox134.BackColor = IIf(e750 <= 1, Color.LightGreen, Color.Red)
@@ -812,7 +818,7 @@ Public Class Form1
         Dim u As Double
         Dim tau_sd, tau_Rd As Double
         Dim e759, e760, e761, e762, e763, e764 As Double
-        Dim q_sd, M3, Ms1Rd, Ms2rd, MstRd, MpRd As Double
+        Dim q_sd, M3, Ms1Rd, Ms2Rd, MstRd, MpRd As Double
         Dim Nsd, Nrd, Ne, NksRd, NkpRd, Zstar As Double
 
         tau_sd = NumericUpDown44.Value
@@ -821,7 +827,7 @@ Public Class Form1
         Double.TryParse(TextBox167.Text, Ne)        'equation 7.73
         Double.TryParse(TextBox155.Text, Nrd)       'equation 7.65
         Double.TryParse(TextBox163.Text, Ms1Rd)     'equation 7.68
-        Double.TryParse(TextBox163.Text, Ms2rd)     'equation 7.69
+        Double.TryParse(TextBox164.Text, Ms2Rd)     'equation 7.69
         Double.TryParse(TextBox162.Text, NkpRd)     'equation 7.67
         Double.TryParse(TextBox156.Text, NksRd)     'equation 7.66
         Double.TryParse(TextBox166.Text, MpRd)      'equation 7.71
@@ -830,26 +836,31 @@ Public Class Form1
         Double.TryParse(TextBox73.Text, tau_Rd)     'equation 7.18
         u = (tau_sd / tau_Rd) ^ 2                   'equation 7.58
 
-        M3 = Abs(q_sd * _l ^ 2 / 8)
+        M3 = Abs((q_sd * _l ^ 2) / 8)
 
-        e759 = (Nsd / NksRd) - 2 * (Nsd / Nrd) + (M3 + Nsd * Zstar) / MstRd * (1 - Nsd / Ne) + u
+        'MessageBox.Show(Nsd.ToString & " " & NksRd.ToString & " " & Nrd.ToString & " " & M3.ToString & " " & MstRd.ToString & " ")
+        e759 = (Nsd / NksRd) - 2 * (Nsd / Nrd) + ((M3 + Nsd * Zstar) / (MstRd * (1 - Nsd / Ne))) + u
         e760 = (Nsd / NkpRd) + (M3 + Nsd * Zstar) / MpRd * (1 - Nsd / Ne) + u
 
-        If M3 >= Nsd * Zstar Then
-            e761 = (Nsd / NksRd) + (M3 - Nsd * Zstar) / Ms2rd * (1 - Nsd / Ne) + u
+        If (M3 >= (Nsd * Zstar)) Then
+            GroupBox43.Visible = True
+            GroupBox44.Visible = False
+            e761 = (Nsd / NksRd) + (M3 - Nsd * Zstar) / Ms2Rd * (1 - Nsd / Ne) + u
             e762 = (Nsd / NkpRd) - 2 * Nsd / Nrd + (M3 - Nsd * Zstar) / MpRd * (1 - Nsd / Ne) + u
         Else
+            GroupBox43.Visible = False
+            GroupBox44.Visible = True
             e763 = (Nsd / NksRd) - 2 * (Nsd / Nrd) + (Nsd * Zstar - M3) / MstRd * (1 - Nsd / Ne) + u
             e764 = (Nsd / NkpRd) + (Nsd * Zstar - M3) / (MpRd * (1 - Nsd / Ne)) + u
         End If
 
         '--------------- results ----------------
-        TextBox150.Text = Math.Round(e759, 2).ToString
-        TextBox151.Text = Math.Round(e760, 2).ToString
-        TextBox205.Text = Math.Round(e761, 2).ToString
-        TextBox206.Text = Math.Round(e762, 2).ToString
-        TextBox203.Text = Math.Round(e763, 2).ToString
-        TextBox204.Text = Math.Round(e764, 2).ToString
+        TextBox150.Text = Math.Round(e759, 3).ToString
+        TextBox151.Text = Math.Round(e760, 3).ToString
+        TextBox205.Text = Math.Round(e761, 3).ToString
+        TextBox206.Text = Math.Round(e762, 3).ToString
+        TextBox203.Text = Math.Round(e763, 3).ToString
+        TextBox204.Text = Math.Round(e764, 3).ToString
 
         '-------- check ---------------
         TextBox150.BackColor = IIf(e759 <= 1, Color.LightGreen, Color.Red)
@@ -913,17 +924,17 @@ Public Class Form1
         TextBox175.Text = Math.Round(W, 0).ToString
         TextBox173.Text = Math.Round(lk, 0).ToString
         TextBox171.Text = Math.Round(iee, 1).ToString
-        TextBox167.Text = Math.Round(Ne / 1000, 0).ToString    '[N]->[kN]
+        TextBox167.Text = Math.Round(Ne, 0).ToString    '[N]->[kN]
         TextBox175.Text = Math.Round(Wes, 0).ToString
         TextBox168.Text = Math.Round(Wep, 0).ToString
         TextBox191.Text = Math.Round(W, 0).ToString
-        TextBox166.Text = Math.Round(MpRd / 1000, 0).ToString  '[N.mm]->[N.m]
-        TextBox165.Text = Math.Round(MstRd / 1000, 0).ToString '[N.mm]->[N.m]
-        TextBox164.Text = Math.Round(Ms2Rd / 1000, 0).ToString '[N.mm]->[N.m]
-        TextBox163.Text = Math.Round(Ms1Rd / 1000, 0).ToString '[N.mm]->[N.m]
-        TextBox162.Text = Math.Round(NkpRd / 1000, 0).ToString '[N]->[kN]
-        TextBox156.Text = Math.Round(NksRd / 1000, 0).ToString '[N]->[kN]
-        TextBox155.Text = Math.Round(Nrd / 1000, 0).ToString   '[N]->[kN]
+        TextBox166.Text = Math.Round(MpRd, 0).ToString  '[N.mm]->[N.m]
+        TextBox165.Text = Math.Round(MstRd, 0).ToString '[N.mm]->[N.m]
+        TextBox164.Text = Math.Round(Ms2Rd, 0).ToString '[N.mm]->[N.m]
+        TextBox163.Text = Math.Round(Ms1Rd, 0).ToString '[N.mm]->[N.m]
+        TextBox162.Text = Math.Round(NkpRd, 0).ToString '[N]->[kN]
+        TextBox156.Text = Math.Round(NksRd, 0).ToString '[N]->[kN]
+        TextBox155.Text = Math.Round(Nrd, 0).ToString   '[N]
         TextBox194.Text = Math.Round(Se, 0).ToString
         TextBox195.Text = Math.Round(fr, 0).ToString
         TextBox196.Text = Math.Round(fk_eq726, 0).ToString
