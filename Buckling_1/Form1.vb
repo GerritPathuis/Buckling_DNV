@@ -775,7 +775,6 @@ Public Class Form1
         e756 = (Nsd / NksRd) + (M2sd - Nsd * Zstar) / (Ms2rd * (1 - Nsd / Ne)) + u
         e757 = (Nsd / NkpRd) - 2 * (Nsd / Nrd) + (M2sd - Nsd * Zstar) / MpRd * (1 - Nsd / Ne) + u
 
-
         TextBox198.Text = Math.Round(tau_sd, 1).ToString
         TextBox199.Text = Math.Round(tau_Rd, 0).ToString    'equation 7.18
 
@@ -809,6 +808,58 @@ Public Class Form1
         TextBox161.BackColor = IIf(e757 <= 1, Color.LightGreen, Color.Red)
 
     End Sub
+    Private Sub DNV_chapter7_72()
+        Dim u As Double
+        Dim tau_sd, tau_Rd As Double
+        Dim e759, e760, e761, e762, e763, e764 As Double
+        Dim q_sd, M3, Ms1Rd, Ms2rd, MstRd, MpRd As Double
+        Dim Nsd, Nrd, Ne, NksRd, NkpRd, Zstar As Double
+
+        tau_sd = NumericUpDown44.Value
+        Zstar = NumericUpDown12.Value
+
+        Double.TryParse(TextBox167.Text, Ne)        'equation 7.73
+        Double.TryParse(TextBox155.Text, Nrd)       'equation 7.65
+        Double.TryParse(TextBox163.Text, Ms1Rd)     'equation 7.68
+        Double.TryParse(TextBox163.Text, Ms2rd)     'equation 7.69
+        Double.TryParse(TextBox162.Text, NkpRd)     'equation 7.67
+        Double.TryParse(TextBox156.Text, NksRd)     'equation 7.66
+        Double.TryParse(TextBox166.Text, MpRd)      'equation 7.71
+        Double.TryParse(TextBox40.Text, Nsd)        'equation 7.8
+        Double.TryParse(TextBox26.Text, q_sd)       'equation 7.8
+        Double.TryParse(TextBox73.Text, tau_Rd)     'equation 7.18
+        u = (tau_sd / tau_Rd) ^ 2                   'equation 7.58
+
+        M3 = Abs(q_sd * _l ^ 2 / 8)
+
+        e759 = (Nsd / NksRd) - 2 * (Nsd / Nrd) + (M3 + Nsd * Zstar) / MstRd * (1 - Nsd / Ne) + u
+        e760 = (Nsd / NkpRd) + (M3 + Nsd * Zstar) / MpRd * (1 - Nsd / Ne) + u
+
+        If M3 >= Nsd * Zstar Then
+            e761 = (Nsd / NksRd) + (M3 - Nsd * Zstar) / Ms2rd * (1 - Nsd / Ne) + u
+            e762 = (Nsd / NkpRd) - 2 * Nsd / Nrd + (M3 - Nsd * Zstar) / MpRd * (1 - Nsd / Ne) + u
+        Else
+            e763 = (Nsd / NksRd) - 2 * (Nsd / Nrd) + (Nsd * Zstar - M3) / MstRd * (1 - Nsd / Ne) + u
+            e764 = (Nsd / NkpRd) + (Nsd * Zstar - M3) / (MpRd * (1 - Nsd / Ne)) + u
+        End If
+
+        '--------------- results ----------------
+        TextBox150.Text = Math.Round(e759, 2).ToString
+        TextBox151.Text = Math.Round(e760, 2).ToString
+        TextBox205.Text = Math.Round(e761, 2).ToString
+        TextBox206.Text = Math.Round(e762, 2).ToString
+        TextBox203.Text = Math.Round(e763, 2).ToString
+        TextBox204.Text = Math.Round(e764, 2).ToString
+
+        '-------- check ---------------
+        TextBox150.BackColor = IIf(e759 <= 1, Color.LightGreen, Color.Red)
+        TextBox151.BackColor = IIf(e760 <= 1, Color.LightGreen, Color.Red)
+        TextBox205.BackColor = IIf(e761 <= 1, Color.LightGreen, Color.Red)
+        TextBox206.BackColor = IIf(e762 <= 1, Color.LightGreen, Color.Red)
+        TextBox203.BackColor = IIf(e763 <= 1, Color.LightGreen, Color.Red)
+        TextBox204.BackColor = IIf(e764 <= 1, Color.LightGreen, Color.Red)
+    End Sub
+
     Private Sub DNV_chapter7_73() 'Chapter 7.7.3
         Dim Nrd, Ae, A_s, Se As Double
         Dim Ie, iee, fT As Double
@@ -832,9 +883,15 @@ Public Class Form1
         Wes = Ie / Zt
         W = IIf(Wep < Wes, Wep, Wes)
 
-        pf = 12 * W * _fy / (_l ^ 2 * _s * _Ym)         '(equation 7.75)
-        'lk = _l * (1 - 0.5 * Abs(_psd / pf))           '(equation 7.74)
-        lk = _l                                         'equ 7.75 only for simple supported stiffeners DNV_chapter7_51
+        '----------- type of stiffener ---------------
+        If RadioButton1.Checked Then    'Continuous stiffener
+            Label453.Text = "Continuous"
+            pf = 12 * W * _fy / (_l ^ 2 * _s * _Ym)         '(equation 7.75)
+            lk = _l * (1 - 0.5 * Abs(_psd / pf))            '(equation 7.74)
+        Else
+            Label453.Text = "'Snipped"
+            lk = _l 'equ 7.75 only for simple supported stiffeners 
+        End If
 
         Ne = PI ^ 2 * _E_mod * Ae / (lk / iee) ^ 2     '(equation 7.72)
 
@@ -934,6 +991,7 @@ Public Class Form1
         DNV_chapter7_51() 'Chapter 7.5.1
         DNV_chapter7_52() 'Chapter 7.5.2
         DNV_chapter7_71() 'Chapter 7.7.1
+        DNV_chapter7_72() 'Chapter 7.7.2
         DNV_chapter7_73() 'Chapter 7.7.3
 
     End Sub
