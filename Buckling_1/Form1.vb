@@ -522,6 +522,7 @@ Public Class Form1
 
         '============================= Plate side=======================
         fr1 = _fy
+
         fe1 = PI ^ 2 * _E_mod * (iee / lk) ^ 2              'equation 7.24
         lambda1 = Sqrt(fr1 / fe1)                            'equation 7.23
         mu1 = (0.34 + 0.08 * Zt / iee) * (lambda1 - 0.2)     'equation 7.26
